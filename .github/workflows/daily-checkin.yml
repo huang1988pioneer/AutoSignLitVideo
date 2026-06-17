@@ -13,44 +13,78 @@ jobs:
   checkin:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    name: checkin (${{ matrix.account }}) - ${{ matrix.label }}
     strategy:
       fail-fast: false
       max-parallel: 4
       matrix:
-        account:
-          - 1
-          - 2
-          - 3
-          - 4
-          - 5
-          - 6
-          - 7
-          - 8
-          - 9
-          - 10
-          - 11
-          - 12
-          - 13
-          - 14
-          - 15
-          - 16
-          - 17
-          - 18
-          - 19
-          - 20
-          - 21
-          - 22
-          - 23
-          - 24
-          - 25
-          - 26
-          - 27
-          - 28
-          - 29
-          - 30
-          - 31
-          - 32
-          - 33
+        include:
+          - account: 1
+            label: samafengtu-checkin (1)
+          - account: 2
+            label: fengtusama-checkin (2)
+          - account: 3
+            label: tushenbyfengbro-checkin (3)
+          - account: 4
+            label: account-4
+          - account: 5
+            label: account-5
+          - account: 6
+            label: account-6
+          - account: 7
+            label: account-7
+          - account: 8
+            label: account-8
+          - account: 9
+            label: account-9
+          - account: 10
+            label: account-10
+          - account: 11
+            label: account-11
+          - account: 12
+            label: account-12
+          - account: 13
+            label: account-13
+          - account: 14
+            label: account-14
+          - account: 15
+            label: account-15
+          - account: 16
+            label: account-16
+          - account: 17
+            label: account-17
+          - account: 18
+            label: account-18
+          - account: 19
+            label: account-19
+          - account: 20
+            label: account-20
+          - account: 21
+            label: account-21
+          - account: 22
+            label: account-22
+          - account: 23
+            label: account-23
+          - account: 24
+            label: account-24
+          - account: 25
+            label: account-25
+          - account: 26
+            label: account-26
+          - account: 27
+            label: account-27
+          - account: 28
+            label: account-28
+          - account: 29
+            label: account-29
+          - account: 30
+            label: account-30
+          - account: 31
+            label: account-31
+          - account: 32
+            label: account-32
+          - account: 33
+            label: account-33
 
     steps:
       - name: Checkout
@@ -84,6 +118,7 @@ jobs:
         if: steps.account_secret.outputs.configured == 'true'
         env:
           LITMEDIA_ACCOUNT_INDEX: ${{ matrix.account }}
+          LITMEDIA_ACCOUNT_LABEL: ${{ matrix.label }}
           LITMEDIA_STORAGE_STATE_BASE64: ${{ secrets[format('LITMEDIA_STORAGE_STATE_BASE64_{0}', matrix.account)] }}
           LITMEDIA_URL: ${{ vars.LITMEDIA_URL }}
         run: npm run checkin

@@ -7,6 +7,7 @@ import { join } from 'node:path';
 const defaultTargetUrl = 'https://litmedia.ai/tw/app/litvideo/ai-image/';
 const targetUrl = process.env.LITMEDIA_URL?.trim() || defaultTargetUrl;
 const accountIndex = process.env.LITMEDIA_ACCOUNT_INDEX;
+const accountLabel = process.env.LITMEDIA_ACCOUNT_LABEL;
 const storageStatePath = await resolveStorageStatePath();
 const headless = process.env.HEADLESS !== 'false';
 
@@ -20,7 +21,8 @@ const page = await context.newPage();
 
 try {
   if (accountIndex) {
-    console.log(`Running LitMedia check-in for account ${accountIndex}`);
+    const displayLabel = accountLabel ? `${accountIndex} (${accountLabel})` : accountIndex;
+    console.log(`Running LitMedia check-in for account ${displayLabel}`);
   }
 
   console.log(`Opening ${targetUrl}`);
