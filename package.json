@@ -1,0 +1,14 @@
+{
+  "name": "cron-lit-video",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "auth": "playwright install chromium && node scripts/save-auth.mjs",
+    "checkin": "node scripts/checkin.mjs",
+    "check": "node --check scripts/save-auth.mjs && node --check scripts/checkin.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.54.0"
+  }
+}
