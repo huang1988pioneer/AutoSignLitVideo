@@ -50,6 +50,14 @@ Convert the storage state file to base64:
 [Convert]::ToBase64String([IO.File]::ReadAllBytes("auth/litmedia.storageState.json")) | Set-Clipboard
 ```
 
+Or use the helper command to validate the JSON and copy the GitHub Secret value automatically:
+
+```powershell
+cmd /c npm run secret -- 1
+```
+
+The number maps to the secret name. For example, `1` copies the value for `LITMEDIA_STORAGE_STATE_BASE64_1`; `33` copies the value for `LITMEDIA_STORAGE_STATE_BASE64_33`.
+
 Create numbered repository secrets from `1` to `33`:
 
 ```text
@@ -65,7 +73,7 @@ For multiple accounts, repeat this flow:
 
 1. Run `cmd /c npm run auth`.
 2. Log in as the next LitMedia account.
-3. Convert `auth/litmedia.storageState.json` to base64.
+3. Run `cmd /c npm run secret -- <account-number>`.
 4. Save it as `LITMEDIA_STORAGE_STATE_BASE64_<account-number>`.
 
 Optional repository variable:
