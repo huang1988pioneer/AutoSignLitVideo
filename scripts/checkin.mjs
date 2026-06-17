@@ -4,7 +4,8 @@ import { existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-const targetUrl = process.env.LITMEDIA_URL ?? 'https://litmedia.ai/tw/app/litvideo/ai-image/';
+const defaultTargetUrl = 'https://litmedia.ai/tw/app/litvideo/ai-image/';
+const targetUrl = process.env.LITMEDIA_URL?.trim() || defaultTargetUrl;
 const accountIndex = process.env.LITMEDIA_ACCOUNT_INDEX;
 const storageStatePath = await resolveStorageStatePath();
 const headless = process.env.HEADLESS !== 'false';
@@ -58,6 +59,12 @@ async function resolveStorageStatePath() {
     const secretName = accountIndex
       ? `LITMEDIA_STORAGE_STATE_BASE64_${accountIndex}`
       : 'LITMEDIA_STORAGE_STATE_BASE64';
+
+    if (process.env.GITHUB_ACTIONS === 'true' && accountIndex) {
+      console.log(`Skipping account ${accountIndex}: ${secretName} is not configured.`);
+      process.exit(0);
+    }
+
     throw new Error(
       `Missing storage state file: ${path}\n` +
         `Run \`npm run auth\` locally first, or set ${secretName} in GitHub Secrets.`
@@ -69,14 +76,14 @@ async function resolveStorageStatePath() {
 }
 
 async function openRewardPanelIfNeeded(page) {
-  const heading = page.getByText('每日簽到獎勵', { exact: true }).first();
+  const heading = page.getByText('\u6bcf\u65e5\u7c3d\u5230\u734e\u52f5', { exact: true }).first();
   if (await heading.isVisible({ timeout: 5_000 }).catch(() => false)) {
     return;
   }
 
   const rewardTriggers = [
-    page.getByRole('button', { name: /每日|簽到|獎勵|禮物|gift/i }).first(),
-    page.locator('[aria-label*="簽到"], [aria-label*="獎勵"], [aria-label*="gift" i]').first(),
+    page.getByRole('button', { name: /\u6bcf\u65e5|\u7c3d\u5230|\u734e\u52f5|\u79ae\u7269|gift/i }).first(),
+    page.locator('[aria-label*="\\7c3d\\5230"], [aria-label*="\\734e\\52f5"], [aria-label*="gift" i]').first(),
     page.locator('img[src*="gift" i], svg[aria-label*="gift" i]').first()
   ];
 
@@ -94,12 +101,12 @@ async function openRewardPanelIfNeeded(page) {
 
 async function clickDailyCheckin(page) {
   const signedHints = [
-    page.getByText(/已連續簽到|已簽到|今天已簽/i).first(),
+    page.getByText(/\u5df2\u9023\u7e8c\u7c3d\u5230|\u5df2\u7c3d\u5230|\u4eca\u5929\u5df2\u7c3d/i).first(),
     page.getByText(/already checked|checked in/i).first()
   ];
 
-  const signButton = page.getByRole('button', { name: /^簽到$/ }).first();
-  const fallbackButton = page.locator('button:has-text("簽到")').first();
+  const signButton = page.getByRole('button', { name: /^\u7c3d\u5230$/ }).first();
+  const fallbackButton = page.locator('button:has-text("\\7c3d\\5230")').first();
   const button = (await signButton.count()) > 0 ? signButton : fallbackButton;
 
   if ((await button.count()) === 0) {
@@ -120,7 +127,7 @@ async function clickDailyCheckin(page) {
   await page.waitForTimeout(2_000);
 
   const successHints = [
-    page.getByText(/簽到成功|已簽到|領取成功|成功/i).first(),
+    page.getByText(/\u7c3d\u5230\u6210\u529f|\u5df2\u7c3d\u5230|\u9818\u53d6\u6210\u529f|\u6210\u529f/i).first(),
     page.getByText(/success|checked in/i).first()
   ];
 
