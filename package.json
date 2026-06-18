@@ -8,7 +8,7 @@
     "secret": "node scripts/export-secret.mjs",
     "checkin": "node scripts/checkin.mjs",
     "checkin:all": "node scripts/checkin-all.mjs",
-    "check": "node --check scripts/save-auth.mjs && node --check scripts/checkin.mjs && node --check scripts/checkin-all.mjs && node --check scripts/export-secret.mjs"
+    "check": "node --check scripts/save-auth.mjs && node --check scripts/checkin.mjs && node --check scripts/checkin-all.mjs && node --check scripts/export-secret.mjs && node --check scripts/litmedia-checkin.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.54.0"

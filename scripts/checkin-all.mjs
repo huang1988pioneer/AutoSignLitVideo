@@ -1,4 +1,5 @@
-import { spawn } from 'node:child_process';
+import { chromium } from 'playwright';
+import { defaultTargetUrl, runLitMediaCheckin } from './litmedia-checkin.mjs';
 
 const accounts = [
   [1, 'samafengtu-checkin (1)'],
@@ -36,52 +37,91 @@ const accounts = [
   [33, 'account-33']
 ];
 
-let configured = 0;
+const delayMinMs = parseDelay(process.env.LITMEDIA_DELAY_MIN_MS, 15_000);
+const delayMaxMs = parseDelay(process.env.LITMEDIA_DELAY_MAX_MS, 45_000);
+const targetUrl = process.env.LITMEDIA_URL?.trim() || defaultTargetUrl;
+const configuredAccounts = accounts
+  .map(([index, label]) => ({
+    index,
+    label,
+    secretName: `LITMEDIA_STORAGE_STATE_BASE64_${index}`,
+    secret: process.env[`LITMEDIA_STORAGE_STATE_BASE64_${index}`]?.trim()
+  }))
+  .filter((account) => account.secret);
+
 let skipped = 0;
 let failed = 0;
 
 for (const [index, label] of accounts) {
-  const secretName = `LITMEDIA_STORAGE_STATE_BASE64_${index}`;
-  const secret = process.env[secretName]?.trim();
-
-  if (!secret) {
+  if (!process.env[`LITMEDIA_STORAGE_STATE_BASE64_${index}`]?.trim()) {
     skipped += 1;
-    console.log(`Skipping account ${index} (${label}): ${secretName} is not configured.`);
-    continue;
-  }
-
-  configured += 1;
-  console.log(`\n=== Account ${index}: ${label} ===`);
-
-  const code = await runAccount(index, label, secret);
-  if (code !== 0) {
-    failed += 1;
-    console.error(`Account ${index} failed with exit code ${code}.`);
+    console.log(`Skipping account ${index} (${label}): LITMEDIA_STORAGE_STATE_BASE64_${index} is not configured.`);
   }
 }
 
-console.log('');
-console.log(`Configured accounts: ${configured}`);
-console.log(`Skipped accounts: ${skipped}`);
-console.log(`Failed accounts: ${failed}`);
+if (configuredAccounts.length === 0) {
+  printSummary({ configured: 0, skipped, failed });
+  process.exit(0);
+}
+
+const browser = await chromium.launch({ headless: process.env.HEADLESS !== 'false' });
+
+try {
+  for (let i = 0; i < configuredAccounts.length; i += 1) {
+    const account = configuredAccounts[i];
+    console.log(`\n=== Account ${account.index}: ${account.label} ===`);
+
+    try {
+      await runLitMediaCheckin(browser, {
+        accountIndex: String(account.index),
+        accountLabel: account.label,
+        storageStateBase64: account.secret,
+        targetUrl
+      });
+    } catch (error) {
+      failed += 1;
+      console.error(error instanceof Error ? error.stack : error);
+      console.error(`Account ${account.index} failed.`);
+    }
+
+    if (i < configuredAccounts.length - 1) {
+      const delay = randomDelay(delayMinMs, delayMaxMs);
+      console.log(`Waiting ${Math.round(delay / 1000)} seconds before the next account.`);
+      await wait(delay);
+    }
+  }
+} finally {
+  await browser.close();
+}
+
+printSummary({ configured: configuredAccounts.length, skipped, failed });
 
 if (failed > 0) {
   process.exitCode = 1;
 }
 
-function runAccount(index, label, secret) {
-  return new Promise((resolve, reject) => {
-    const child = spawn(process.execPath, ['scripts/checkin.mjs'], {
-      env: {
-        ...process.env,
-        LITMEDIA_ACCOUNT_INDEX: String(index),
-        LITMEDIA_ACCOUNT_LABEL: label,
-        LITMEDIA_STORAGE_STATE_BASE64: secret
-      },
-      stdio: 'inherit'
-    });
+function randomDelay(min, max) {
+  const safeMin = Number.isFinite(min) && min >= 0 ? min : 15_000;
+  const safeMax = Number.isFinite(max) && max >= safeMin ? max : safeMin;
+  return Math.floor(safeMin + Math.random() * (safeMax - safeMin + 1));
+}
 
-    child.on('error', reject);
-    child.on('close', resolve);
-  });
+function parseDelay(value, fallback) {
+  if (value === undefined || value.trim() === '') {
+    return fallback;
+  }
+
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function printSummary({ configured, skipped, failed }) {
+  console.log('');
+  console.log(`Configured accounts: ${configured}`);
+  console.log(`Skipped accounts: ${skipped}`);
+  console.log(`Failed accounts: ${failed}`);
 }

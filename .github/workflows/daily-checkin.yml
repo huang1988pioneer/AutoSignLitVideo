@@ -32,6 +32,8 @@ jobs:
       - name: Run configured daily check-ins
         env:
           LITMEDIA_URL: ${{ vars.LITMEDIA_URL }}
+          LITMEDIA_DELAY_MIN_MS: ${{ vars.LITMEDIA_DELAY_MIN_MS }}
+          LITMEDIA_DELAY_MAX_MS: ${{ vars.LITMEDIA_DELAY_MAX_MS }}
           LITMEDIA_STORAGE_STATE_BASE64_1: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_1 }}
           LITMEDIA_STORAGE_STATE_BASE64_2: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_2 }}
           LITMEDIA_STORAGE_STATE_BASE64_3: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_3 }}
