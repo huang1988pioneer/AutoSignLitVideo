@@ -12,79 +12,7 @@ on:
 jobs:
   checkin:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-    name: checkin (${{ matrix.account }}) - ${{ matrix.label }}
-    strategy:
-      fail-fast: false
-      max-parallel: 4
-      matrix:
-        include:
-          - account: 1
-            label: samafengtu-checkin (1)
-          - account: 2
-            label: fengtusama-checkin (2)
-          - account: 3
-            label: tushenbyfengbro-checkin (3)
-          - account: 4
-            label: fengwithting0831-checkin (4)
-          - account: 5
-            label: fengwithfeng1127-checkin (5)
-          - account: 6
-            label: fengwithtu1127-checkin (6)
-          - account: 7
-            label: akaonda333-checkin (7)
-          - account: 8
-            label: fbussinessengen-checkin (8)
-          - account: 9
-            label: gdictatorff-checkin (9)
-          - account: 10
-            label: engtuprinfo-checkin (10)
-          - account: 11
-            label: flottojackpot-checkin (11)
-          - account: 12
-            label: engfeng33feng35feng3-checkin (12)
-          - account: 13
-            label: chbondg2-checkin (13)
-          - account: 14
-            label: chbondg_outlook-checkin (14)
-          - account: 15
-            label: gaokaolevel3iptopscorer_outlook-checkin (15)
-          - account: 16
-            label: huang1988pioneer_outlook-checkin (16)
-          - account: 17
-            label: fengtuta_tutamail-checkin (17)
-          - account: 18
-            label: fengfence_mailfence-checkin (18)
-          - account: 19
-            label: account-19
-          - account: 20
-            label: account-20
-          - account: 21
-            label: account-21
-          - account: 22
-            label: account-22
-          - account: 23
-            label: account-23
-          - account: 24
-            label: account-24
-          - account: 25
-            label: account-25
-          - account: 26
-            label: account-26
-          - account: 27
-            label: account-27
-          - account: 28
-            label: account-28
-          - account: 29
-            label: account-29
-          - account: 30
-            label: account-30
-          - account: 31
-            label: account-31
-          - account: 32
-            label: account-32
-          - account: 33
-            label: account-33
+    timeout-minutes: 30
 
     steps:
       - name: Checkout
@@ -98,35 +26,51 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Check account secret
-        id: account_secret
-        env:
-          LITMEDIA_STORAGE_STATE_BASE64: ${{ secrets[format('LITMEDIA_STORAGE_STATE_BASE64_{0}', matrix.account)] }}
-        run: |
-          if [ -n "$LITMEDIA_STORAGE_STATE_BASE64" ]; then
-            echo "configured=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "configured=false" >> "$GITHUB_OUTPUT"
-            echo "Skipping account ${{ matrix.account }}: LITMEDIA_STORAGE_STATE_BASE64_${{ matrix.account }} is not configured."
-          fi
-
       - name: Install Playwright browser
-        if: steps.account_secret.outputs.configured == 'true'
         run: npx playwright install --with-deps chromium
 
-      - name: Run daily check-in
-        if: steps.account_secret.outputs.configured == 'true'
+      - name: Run configured daily check-ins
         env:
-          LITMEDIA_ACCOUNT_INDEX: ${{ matrix.account }}
-          LITMEDIA_ACCOUNT_LABEL: ${{ matrix.label }}
-          LITMEDIA_STORAGE_STATE_BASE64: ${{ secrets[format('LITMEDIA_STORAGE_STATE_BASE64_{0}', matrix.account)] }}
           LITMEDIA_URL: ${{ vars.LITMEDIA_URL }}
-        run: npm run checkin
+          LITMEDIA_STORAGE_STATE_BASE64_1: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_1 }}
+          LITMEDIA_STORAGE_STATE_BASE64_2: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_2 }}
+          LITMEDIA_STORAGE_STATE_BASE64_3: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_3 }}
+          LITMEDIA_STORAGE_STATE_BASE64_4: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_4 }}
+          LITMEDIA_STORAGE_STATE_BASE64_5: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_5 }}
+          LITMEDIA_STORAGE_STATE_BASE64_6: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_6 }}
+          LITMEDIA_STORAGE_STATE_BASE64_7: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_7 }}
+          LITMEDIA_STORAGE_STATE_BASE64_8: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_8 }}
+          LITMEDIA_STORAGE_STATE_BASE64_9: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_9 }}
+          LITMEDIA_STORAGE_STATE_BASE64_10: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_10 }}
+          LITMEDIA_STORAGE_STATE_BASE64_11: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_11 }}
+          LITMEDIA_STORAGE_STATE_BASE64_12: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_12 }}
+          LITMEDIA_STORAGE_STATE_BASE64_13: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_13 }}
+          LITMEDIA_STORAGE_STATE_BASE64_14: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_14 }}
+          LITMEDIA_STORAGE_STATE_BASE64_15: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_15 }}
+          LITMEDIA_STORAGE_STATE_BASE64_16: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_16 }}
+          LITMEDIA_STORAGE_STATE_BASE64_17: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_17 }}
+          LITMEDIA_STORAGE_STATE_BASE64_18: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_18 }}
+          LITMEDIA_STORAGE_STATE_BASE64_19: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_19 }}
+          LITMEDIA_STORAGE_STATE_BASE64_20: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_20 }}
+          LITMEDIA_STORAGE_STATE_BASE64_21: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_21 }}
+          LITMEDIA_STORAGE_STATE_BASE64_22: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_22 }}
+          LITMEDIA_STORAGE_STATE_BASE64_23: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_23 }}
+          LITMEDIA_STORAGE_STATE_BASE64_24: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_24 }}
+          LITMEDIA_STORAGE_STATE_BASE64_25: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_25 }}
+          LITMEDIA_STORAGE_STATE_BASE64_26: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_26 }}
+          LITMEDIA_STORAGE_STATE_BASE64_27: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_27 }}
+          LITMEDIA_STORAGE_STATE_BASE64_28: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_28 }}
+          LITMEDIA_STORAGE_STATE_BASE64_29: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_29 }}
+          LITMEDIA_STORAGE_STATE_BASE64_30: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_30 }}
+          LITMEDIA_STORAGE_STATE_BASE64_31: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_31 }}
+          LITMEDIA_STORAGE_STATE_BASE64_32: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_32 }}
+          LITMEDIA_STORAGE_STATE_BASE64_33: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_33 }}
+        run: npm run checkin:all
 
-      - name: Upload failure screenshot
+      - name: Upload failure screenshots
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: litmedia-checkin-failure-${{ matrix.account }}
-          path: test-results/checkin-failure.png
+          name: litmedia-checkin-failures
+          path: test-results/*.png
           if-no-files-found: ignore

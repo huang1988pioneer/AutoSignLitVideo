@@ -82,7 +82,7 @@ Optional repository variable:
 LITMEDIA_URL=https://litmedia.ai/tw/app/litvideo/ai-image/
 ```
 
-The workflow runs every day at `05:05` and `17:05` Asia/Taipei time, and can also be started manually from the GitHub Actions tab. It runs accounts `1` through `33` with `max-parallel: 4`.
+The workflow runs every day at `05:05` and `17:05` Asia/Taipei time, and can also be started manually from the GitHub Actions tab. It installs Playwright once, then runs configured accounts `1` through `33` in sequence. Accounts without a matching secret are skipped.
 
 ## Troubleshooting
 

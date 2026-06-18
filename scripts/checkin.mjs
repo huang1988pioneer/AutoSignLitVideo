@@ -8,6 +8,7 @@ const defaultTargetUrl = 'https://litmedia.ai/tw/app/litvideo/ai-image/';
 const targetUrl = process.env.LITMEDIA_URL?.trim() || defaultTargetUrl;
 const accountIndex = process.env.LITMEDIA_ACCOUNT_INDEX;
 const accountLabel = process.env.LITMEDIA_ACCOUNT_LABEL;
+const accountSuffix = accountIndex ? `-${accountIndex}` : '';
 const storageStatePath = await resolveStorageStatePath();
 const headless = process.env.HEADLESS !== 'false';
 
@@ -35,10 +36,10 @@ try {
   console.log(result.message);
 
   await mkdir('.auth', { recursive: true });
-  await context.storageState({ path: '.auth/latest.storageState.json' });
+  await context.storageState({ path: `.auth/latest${accountSuffix}.storageState.json` });
 } catch (error) {
   await mkdir('test-results', { recursive: true });
-  await page.screenshot({ path: 'test-results/checkin-failure.png', fullPage: true }).catch(() => {});
+  await page.screenshot({ path: `test-results/checkin-failure${accountSuffix}.png`, fullPage: true }).catch(() => {});
   console.error(error instanceof Error ? error.stack : error);
   process.exitCode = 1;
 } finally {

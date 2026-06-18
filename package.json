@@ -7,7 +7,8 @@
     "auth": "playwright install chromium && node scripts/save-auth.mjs",
     "secret": "node scripts/export-secret.mjs",
     "checkin": "node scripts/checkin.mjs",
-    "check": "node --check scripts/save-auth.mjs && node --check scripts/checkin.mjs && node --check scripts/export-secret.mjs"
+    "checkin:all": "node scripts/checkin-all.mjs",
+    "check": "node --check scripts/save-auth.mjs && node --check scripts/checkin.mjs && node --check scripts/checkin-all.mjs && node --check scripts/export-secret.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.54.0"
