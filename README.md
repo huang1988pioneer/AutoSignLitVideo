@@ -104,9 +104,9 @@ Optional repository variable:
 LITMEDIA_URL=https://litmedia.ai/tw/app/litvideo/ai-image/
 ```
 
-The workflow runs every day at `05:05` and `17:05` Asia/Taipei time, and can also be started manually from the GitHub Actions tab. It installs Playwright once, launches one browser, then runs configured accounts `1` through `33` in sequence with a separate browser context per account. Accounts without a matching secret are skipped.
+The workflow runs every day at `05:05` and `17:05` Asia/Taipei time, and can also be started manually from the GitHub Actions tab. It installs Playwright once, then runs configured accounts `1` through `33` in sequence. Each account launches its own Chromium browser, uses its own storage state, and closes that browser before the next account starts. Accounts without a matching secret are skipped.
 
-The design intentionally prioritizes account isolation over opening many browser processes. Each account gets its own Playwright browser context, so cookies and localStorage do not mix, while the accounts run sequentially instead of in bulk parallel jobs.
+The design intentionally prioritizes account isolation. The accounts still run sequentially instead of in bulk parallel jobs, but cookies, localStorage, browser contexts, and browser processes are separated per account.
 
 Configured accounts wait a random `5` to `15` seconds between runs by default. You can override this with repository variables:
 

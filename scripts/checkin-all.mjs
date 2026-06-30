@@ -66,35 +66,33 @@ if (configuredAccounts.length === 0) {
   process.exit(0);
 }
 
-const browser = await chromium.launch({ headless: process.env.HEADLESS !== 'false' });
+for (let i = 0; i < configuredAccounts.length; i += 1) {
+  const account = configuredAccounts[i];
+  console.log(`\n=== Account ${account.index}: ${account.label} ===`);
 
-try {
-  for (let i = 0; i < configuredAccounts.length; i += 1) {
-    const account = configuredAccounts[i];
-    console.log(`\n=== Account ${account.index}: ${account.label} ===`);
-
-    try {
-      await runLitMediaCheckin(browser, {
-        accountIndex: String(account.index),
-        accountLabel: account.label,
-        storageStateBase64: account.secret,
-        targetUrl
-      });
-    } catch (error) {
-      failed += 1;
-      failedAccounts.push(account);
-      console.error(error instanceof Error ? error.stack : error);
-      console.error(`Account ${account.index} failed.`);
-    }
-
-    if (i < configuredAccounts.length - 1) {
-      const delay = randomDelay(delayMinMs, delayMaxMs);
-      console.log(`Waiting ${Math.round(delay / 1000)} seconds before the next account.`);
-      await wait(delay);
-    }
+  let browser;
+  try {
+    browser = await chromium.launch({ headless: process.env.HEADLESS !== 'false' });
+    await runLitMediaCheckin(browser, {
+      accountIndex: String(account.index),
+      accountLabel: account.label,
+      storageStateBase64: account.secret,
+      targetUrl
+    });
+  } catch (error) {
+    failed += 1;
+    failedAccounts.push(account);
+    console.error(error instanceof Error ? error.stack : error);
+    console.error(`Account ${account.index} failed.`);
+  } finally {
+    await browser?.close().catch(() => {});
   }
-} finally {
-  await browser.close();
+
+  if (i < configuredAccounts.length - 1) {
+    const delay = randomDelay(delayMinMs, delayMaxMs);
+    console.log(`Waiting ${Math.round(delay / 1000)} seconds before the next account.`);
+    await wait(delay);
+  }
 }
 
 printSummary({ configured: configuredAccounts.length, skipped, failed });
