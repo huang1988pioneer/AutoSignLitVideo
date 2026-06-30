@@ -51,6 +51,8 @@ const configuredAccounts = accounts
 
 let skipped = 0;
 let failed = 0;
+const failedAccounts = [];
+const failOnAccountError = parseBoolean(process.env.LITMEDIA_FAIL_ON_ACCOUNT_ERROR, false);
 
 for (const [index, label] of accounts) {
   if (!process.env[`LITMEDIA_STORAGE_STATE_BASE64_${index}`]?.trim()) {
@@ -80,6 +82,7 @@ try {
       });
     } catch (error) {
       failed += 1;
+      failedAccounts.push(account);
       console.error(error instanceof Error ? error.stack : error);
       console.error(`Account ${account.index} failed.`);
     }
@@ -96,7 +99,7 @@ try {
 
 printSummary({ configured: configuredAccounts.length, skipped, failed });
 
-if (failed > 0) {
+if (failed > 0 && failOnAccountError) {
   process.exitCode = 1;
 }
 
@@ -115,6 +118,14 @@ function parseDelay(value, fallback) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+function parseBoolean(value, fallback) {
+  if (value === undefined || value.trim() === '') {
+    return fallback;
+  }
+
+  return /^(1|true|yes)$/i.test(value.trim());
+}
+
 function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -124,4 +135,10 @@ function printSummary({ configured, skipped, failed }) {
   console.log(`Configured accounts: ${configured}`);
   console.log(`Skipped accounts: ${skipped}`);
   console.log(`Failed accounts: ${failed}`);
+
+  if (failedAccounts.length > 0) {
+    const labels = failedAccounts.map((account) => `${account.index} (${account.label})`).join(', ');
+    console.warn(`Accounts needing attention: ${labels}`);
+    console.warn('Failure screenshots were saved under test-results for troubleshooting.');
+  }
 }

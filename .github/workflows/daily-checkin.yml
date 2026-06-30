@@ -69,8 +69,8 @@ jobs:
           LITMEDIA_STORAGE_STATE_BASE64_33: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_33 }}
         run: npm run checkin:all
 
-      - name: Upload failure screenshots
-        if: failure()
+      - name: Upload diagnostic screenshots
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: litmedia-checkin-failures
