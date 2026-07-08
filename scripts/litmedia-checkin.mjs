@@ -3,7 +3,8 @@ import { existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-export const defaultTargetUrl = 'https://litmedia.ai/tw/app/litvideo/ai-image/';
+export const defaultTargetUrl = 'https://www.litmedia.ai/tw/app/litvideo/home/';
+export const defaultCheckinUrl = 'https://www.litmedia.ai/tw/app/litvideo/my-library';
 
 export async function runLitMediaCheckin(browser, options = {}) {
   const {
@@ -36,6 +37,20 @@ export async function runLitMediaCheckin(browser, options = {}) {
 
     console.log(`Opening ${targetUrl}`);
     await page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: 60_000 });
+    await page.waitForLoadState('networkidle', { timeout: 30_000 }).catch(() => {});
+
+    await openRewardPanelIfNeeded(page);
+    const initialState = await getDailyCheckinState(page);
+    console.log(`Initial check-in button state: ${initialState.message}`);
+
+    const redirectDelayMs = randomInt(3_000, 7_000);
+    console.log(
+      `Waiting ${Math.round(redirectDelayMs / 1_000)} seconds before opening ${defaultCheckinUrl}.`
+    );
+    await page.waitForTimeout(redirectDelayMs);
+
+    console.log(`Opening ${defaultCheckinUrl}`);
+    await page.goto(defaultCheckinUrl, { waitUntil: 'domcontentloaded', timeout: 60_000 });
     await page.waitForLoadState('networkidle', { timeout: 30_000 }).catch(() => {});
 
     await openRewardPanelIfNeeded(page);
@@ -108,6 +123,38 @@ async function openRewardPanelIfNeeded(page) {
 }
 
 async function clickDailyCheckin(page) {
+  const state = await getDailyCheckinState(page);
+
+  if (state.status === 'missing') {
+    throw new Error('Could not find a check-in button. The page layout may have changed or login expired.');
+  }
+
+  if (state.status !== 'enabled') {
+    return state;
+  }
+
+  const preClickDelayMs = randomInt(3_000, 7_000);
+  console.log(`Check-in button is enabled; waiting ${Math.round(preClickDelayMs / 1_000)} seconds before clicking.`);
+  await page.waitForTimeout(preClickDelayMs);
+
+  await state.button.click({ timeout: 10_000 });
+  await page.waitForTimeout(2_000);
+
+  const successHints = [
+    page.getByText(/\u7c3d\u5230\u6210\u529f|\u5df2\u7c3d\u5230|\u9818\u53d6\u6210\u529f|\u6210\u529f/i).first(),
+    page.getByText(/success|checked in/i).first()
+  ];
+
+  for (const hint of successHints) {
+    if (await hint.isVisible({ timeout: 2_000 }).catch(() => false)) {
+      return { status: 'checked_in', message: 'Daily check-in completed successfully.' };
+    }
+  }
+
+  return { status: 'clicked', message: 'Clicked the check-in button; no explicit success message was detected.' };
+}
+
+async function getDailyCheckinState(page) {
   const signedHints = [
     page.getByText(/\u5df2\u9023\u7e8c\u7c3d\u5230|\u5df2\u7c3d\u5230|\u4eca\u5929\u5df2\u7c3d/i).first(),
     page.getByText(/already checked|checked in/i).first()
@@ -124,26 +171,16 @@ async function clickDailyCheckin(page) {
       }
     }
 
-    throw new Error('Could not find a check-in button. The page layout may have changed or login expired.');
+    return { status: 'missing', message: 'Check-in button was not found.' };
   }
 
   if (!(await button.isEnabled({ timeout: 5_000 }).catch(() => false))) {
     return { status: 'already_done', message: 'Check-in button is disabled; likely already checked in.' };
   }
 
-  await button.click({ timeout: 10_000 });
-  await page.waitForTimeout(2_000);
+  return { status: 'enabled', message: 'Check-in button is enabled.', button };
+}
 
-  const successHints = [
-    page.getByText(/\u7c3d\u5230\u6210\u529f|\u5df2\u7c3d\u5230|\u9818\u53d6\u6210\u529f|\u6210\u529f/i).first(),
-    page.getByText(/success|checked in/i).first()
-  ];
-
-  for (const hint of successHints) {
-    if (await hint.isVisible({ timeout: 2_000 }).catch(() => false)) {
-      return { status: 'checked_in', message: 'Daily check-in completed successfully.' };
-    }
-  }
-
-  return { status: 'clicked', message: 'Clicked the check-in button; no explicit success message was detected.' };
+function randomInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
 }

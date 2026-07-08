@@ -101,7 +101,7 @@ cmd /c npm run secret -- 2
 Optional repository variable:
 
 ```text
-LITMEDIA_URL=https://litmedia.ai/tw/app/litvideo/ai-image/
+LITMEDIA_URL=https://www.litmedia.ai/tw/app/litvideo/home/
 ```
 
 The workflow runs every day at `05:05` and `17:05` Asia/Taipei time, and can also be started manually from the GitHub Actions tab. It installs Playwright once, then runs configured accounts `1` through `33` in sequence. Each account launches its own Chromium browser, uses its own storage state, and closes that browser before the next account starts. Accounts without a matching secret are skipped.

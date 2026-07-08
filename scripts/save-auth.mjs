@@ -3,7 +3,7 @@ import { mkdir } from 'node:fs/promises';
 import { createInterface } from 'node:readline/promises';
 import { stdin as input, stdout as output } from 'node:process';
 
-const targetUrl = process.env.LITMEDIA_URL ?? 'https://litmedia.ai/tw/app/litvideo/ai-image/';
+const targetUrl = process.env.LITMEDIA_URL ?? 'https://www.litmedia.ai/tw/app/litvideo/home/';
 const accountIndex = process.argv[2]?.trim();
 const statePath = process.env.LITMEDIA_STORAGE_STATE_PATH ?? defaultStatePath(accountIndex);
 
