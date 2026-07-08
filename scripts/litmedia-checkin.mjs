@@ -4,7 +4,12 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 export const defaultTargetUrl = 'https://www.litmedia.ai/tw/app/litvideo/home/';
-export const defaultCheckinUrl = 'https://www.litmedia.ai/tw/app/litvideo/my-library';
+export const checkinUrls = [
+  defaultTargetUrl,
+  'https://www.litmedia.ai/tw/app/litvideo/ai-video/',
+  'https://www.litmedia.ai/tw/app/litvideo/ai-image/',
+  'https://www.litmedia.ai/tw/app/litvideo/my-library'
+];
 
 export async function runLitMediaCheckin(browser, options = {}) {
   const {
@@ -35,28 +40,7 @@ export async function runLitMediaCheckin(browser, options = {}) {
       console.log(`Running LitMedia check-in for account ${displayLabel}`);
     }
 
-    console.log(`Opening ${targetUrl}`);
-    await page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: 60_000 });
-    await page.waitForLoadState('networkidle', { timeout: 30_000 }).catch(() => {});
-
-    await openRewardPanelIfNeeded(page);
-    const initialState = await getDailyCheckinState(page);
-    console.log(`Initial check-in button state: ${initialState.message}`);
-
-    const redirectDelayMs = randomInt(3_000, 7_000);
-    console.log(
-      `Waiting ${Math.round(redirectDelayMs / 1_000)} seconds before opening ${defaultCheckinUrl}.`
-    );
-    await page.waitForTimeout(redirectDelayMs);
-
-    console.log(`Opening ${defaultCheckinUrl}`);
-    await page.goto(defaultCheckinUrl, { waitUntil: 'domcontentloaded', timeout: 60_000 });
-    await page.waitForLoadState('networkidle', { timeout: 30_000 }).catch(() => {});
-
-    await openRewardPanelIfNeeded(page);
-
-    const result = await clickDailyCheckin(page);
-    console.log(result.message);
+    const result = await checkDailyCheckinAcrossPages(page, buildCheckinUrls(targetUrl));
 
     await mkdir('.auth', { recursive: true });
     await context.storageState({ path: `.auth/latest${accountSuffix}.storageState.json` });
@@ -154,6 +138,42 @@ async function clickDailyCheckin(page) {
   return { status: 'clicked', message: 'Clicked the check-in button; no explicit success message was detected.' };
 }
 
+async function checkDailyCheckinAcrossPages(page, urls) {
+  let lastState = null;
+
+  for (let i = 0; i < urls.length; i += 1) {
+    const url = urls[i];
+    console.log(`Opening ${url}`);
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60_000 });
+    await page.waitForLoadState('networkidle', { timeout: 30_000 }).catch(() => {});
+
+    await openRewardPanelIfNeeded(page);
+
+    const state = await getDailyCheckinState(page);
+    lastState = state;
+    console.log(`Check-in button state on ${url}: ${state.message}`);
+
+    if (state.status === 'enabled') {
+      const result = await clickDailyCheckin(page);
+      console.log(result.message);
+      return result;
+    }
+
+    if (i < urls.length - 1) {
+      const redirectDelayMs = randomInt(3_000, 7_000);
+      console.log(`Waiting ${Math.round(redirectDelayMs / 1_000)} seconds before opening the next page.`);
+      await page.waitForTimeout(redirectDelayMs);
+    }
+  }
+
+  if (lastState?.status === 'already_done') {
+    console.log(lastState.message);
+    return lastState;
+  }
+
+  throw new Error(lastState?.message ?? 'Could not find a check-in button on any configured page.');
+}
+
 async function getDailyCheckinState(page) {
   const signedHints = [
     page.getByText(/\u5df2\u9023\u7e8c\u7c3d\u5230|\u5df2\u7c3d\u5230|\u4eca\u5929\u5df2\u7c3d/i).first(),
@@ -183,4 +203,13 @@ async function getDailyCheckinState(page) {
 
 function randomInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function buildCheckinUrls(targetUrl) {
+  const normalizedTargetUrl = targetUrl?.trim();
+  if (!normalizedTargetUrl || normalizedTargetUrl === defaultTargetUrl) {
+    return checkinUrls;
+  }
+
+  return [normalizedTargetUrl, ...checkinUrls.filter((url) => url !== normalizedTargetUrl)];
 }
