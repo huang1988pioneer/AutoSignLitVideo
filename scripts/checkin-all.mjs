@@ -54,6 +54,8 @@ let failed = 0;
 const failedAccounts = [];
 const failOnAccountError = parseBoolean(process.env.LITMEDIA_FAIL_ON_ACCOUNT_ERROR, false);
 
+printConfiguredAccounts(configuredAccounts);
+
 for (const [index, label] of accounts) {
   if (!process.env[`LITMEDIA_STORAGE_STATE_BASE64_${index}`]?.trim()) {
     skipped += 1;
@@ -126,6 +128,22 @@ function parseBoolean(value, fallback) {
 
 function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function printConfiguredAccounts(configuredAccounts) {
+  console.log('Daily LitMedia Check-in accounts:');
+
+  if (configuredAccounts.length === 0) {
+    console.log('No configured accounts found.');
+    console.log('');
+    return;
+  }
+
+  for (const account of configuredAccounts) {
+    console.log(`- Account ${account.index}: ${account.label}`);
+  }
+
+  console.log('');
 }
 
 function printSummary({ configured, skipped, failed }) {
