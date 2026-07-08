@@ -2,9 +2,27 @@
 // Run this in GitHub Actions to see which secrets are set.
 
 const accountLabels = new Map([
-  [19, 'goldshoot0720'],
-  [20, 'abuhg17'],
-  [21, 'huang1988pioneer']
+  [1, 'samafengtu-checkin (1)'],
+  [2, 'fengtusama-checkin (2)'],
+  [3, 'tushenbyfengbro-checkin (3)'],
+  [4, 'fengwithting0831-checkin (4)'],
+  [5, 'fengwithfeng1127-checkin (5)'],
+  [6, 'fengwithtu1127-checkin (6)'],
+  [7, 'akaonda333-checkin (7)'],
+  [8, 'fbussinessengen-checkin (8)'],
+  [9, 'engdictatorf-checkin (9)'],
+  [10, 'fengtuprinfo-checkin (10)'],
+  [11, 'flottojackpot-checkin (11)'],
+  [12, 'fengfeng33feng35feng3-checkin (12)'],
+  [13, 'chbondg2-checkin (13)'],
+  [14, 'chbondg_outlook-checkin (14)'],
+  [15, 'gaokaolevel3iptopscorer_outlook-checkin (15)'],
+  [16, 'huang1988pioneer_outlook-checkin (16)'],
+  [17, 'fengtuta_tutamail-checkin (17)'],
+  [18, 'fengfence_mailfence-checkin (18)'],
+  [19, 'goldshoot0720-checkin (19)'],
+  [20, 'abuhg17-checkin (20)'],
+  [21, 'huang1988pioneer-checkin (21)']
 ]);
 const accounts = Array.from({ length: 33 }, (_, i) => i + 1);
 
