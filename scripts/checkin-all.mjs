@@ -13,7 +13,7 @@ const accounts = [
   [9, 'engdictatorf-checkin (9)'],
   [10, 'fengtuprinfo-checkin (10)'],
   [11, 'flottojackpoteng-checkin (11)'],
-  [12, 'fengfeng33feng35feng3-checkin (12)'],
+  [12, 'feng33feng35feng3-checkin (12)'],
   [13, 'chbondg2-checkin (13)'],
   [14, 'chbondg_outlook-checkin (14)'],
   [15, 'gaokaolevel3iptopscorer_outlook-checkin (15)'],
