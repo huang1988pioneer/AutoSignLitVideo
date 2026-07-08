@@ -12,7 +12,7 @@ const accountLabels = new Map([
   [8, 'fbussinesseng-checkin (8)'],
   [9, 'engdictatorf-checkin (9)'],
   [10, 'fengtuprinfo-checkin (10)'],
-  [11, 'flottojackpot-checkin (11)'],
+  [11, 'flottojackpoteng-checkin (11)'],
   [12, 'fengfeng33feng35feng3-checkin (12)'],
   [13, 'chbondg2-checkin (13)'],
   [14, 'chbondg_outlook-checkin (14)'],
