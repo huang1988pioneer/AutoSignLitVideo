@@ -140,6 +140,7 @@ async function clickDailyCheckin(page) {
 
 async function checkDailyCheckinAcrossPages(page, urls) {
   let lastState = null;
+  let alreadyDoneState = null;
 
   for (let i = 0; i < urls.length; i += 1) {
     const url = urls[i];
@@ -152,6 +153,10 @@ async function checkDailyCheckinAcrossPages(page, urls) {
     const state = await getDailyCheckinState(page);
     lastState = state;
     console.log(`Check-in button state on ${url}: ${state.message}`);
+
+    if (state.status === 'already_done') {
+      alreadyDoneState = state;
+    }
 
     if (state.status === 'enabled') {
       const result = await clickDailyCheckin(page);
@@ -166,9 +171,9 @@ async function checkDailyCheckinAcrossPages(page, urls) {
     }
   }
 
-  if (lastState?.status === 'already_done') {
-    console.log(lastState.message);
-    return lastState;
+  if (alreadyDoneState) {
+    console.log(alreadyDoneState.message);
+    return alreadyDoneState;
   }
 
   throw new Error(lastState?.message ?? 'Could not find a check-in button on any configured page.');
