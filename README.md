@@ -42,6 +42,17 @@ That saves account `1` to:
 auth/account-1.storageState.json
 ```
 
+> **Important: put a space after `--`.**
+>
+> npm needs `--` (with a space after it) to pass the account number into the script.
+>
+> | Command | Result |
+> | --- | --- |
+> | `cmd /c npm run auth -- 4` | Correct → saves `auth/account-4.storageState.json` |
+> | `cmd /c npm run auth --4` | Wrong → number is **not** passed; saves `auth/litmedia.storageState.json` instead |
+>
+> The same rule applies to `secret`: use `cmd /c npm run secret -- 4`, not `--4`.
+> After a successful auth, the terminal should print `Saved Playwright storage state to auth/account-N.storageState.json`. If you see `litmedia.storageState.json`, the account number was not passed.
 Test the check-in locally:
 
 ```powershell
@@ -117,6 +128,7 @@ LITMEDIA_DELAY_MAX_MS=15000
 
 ## Troubleshooting
 
+- **Missing `auth/account-N.storageState.json` after auth:** you likely ran `npm run auth --N` (no space). Use `cmd /c npm run auth -- N` with a space after `--`. Check the terminal log: it must say `auth/account-N.storageState.json`, not `auth/litmedia.storageState.json`.
 - If the action says the storage state is missing, confirm the matching numbered secret exists in GitHub Secrets, such as `LITMEDIA_STORAGE_STATE_BASE64_7`.
-- If login expired, rerun `npm run auth`, regenerate the base64 value, and update the secret.
+- If login expired, rerun `npm run auth` (with `-- N` for numbered accounts), regenerate the base64 value, and update the secret.
 - If the page layout changes, check the uploaded `litmedia-checkin-failure` screenshot artifact from the failed workflow run.
