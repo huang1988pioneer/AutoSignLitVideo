@@ -1,0 +1,78 @@
+name: Daily LitMedia Check-in
+
+on:
+  schedule:
+    # GitHub Actions uses UTC.
+    # 21:05 UTC is 05:05 in Asia/Taipei.
+    # 09:05 UTC is 17:05 in Asia/Taipei.
+    - cron: "5 21 * * *"
+    - cron: "5 9 * * *"
+  workflow_dispatch:
+
+jobs:
+  checkin:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Run configured daily check-ins
+        env:
+          LITMEDIA_URL: ${{ vars.LITMEDIA_URL }}
+          LITMEDIA_DELAY_MIN_MS: ${{ vars.LITMEDIA_DELAY_MIN_MS }}
+          LITMEDIA_DELAY_MAX_MS: ${{ vars.LITMEDIA_DELAY_MAX_MS }}
+          LITMEDIA_STORAGE_STATE_BASE64_1: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_1 }}
+          LITMEDIA_STORAGE_STATE_BASE64_2: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_2 }}
+          LITMEDIA_STORAGE_STATE_BASE64_3: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_3 }}
+          LITMEDIA_STORAGE_STATE_BASE64_4: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_4 }}
+          LITMEDIA_STORAGE_STATE_BASE64_5: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_5 }}
+          LITMEDIA_STORAGE_STATE_BASE64_6: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_6 }}
+          LITMEDIA_STORAGE_STATE_BASE64_7: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_7 }}
+          LITMEDIA_STORAGE_STATE_BASE64_8: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_8 }}
+          LITMEDIA_STORAGE_STATE_BASE64_9: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_9 }}
+          LITMEDIA_STORAGE_STATE_BASE64_10: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_10 }}
+          LITMEDIA_STORAGE_STATE_BASE64_11: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_11 }}
+          LITMEDIA_STORAGE_STATE_BASE64_12: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_12 }}
+          LITMEDIA_STORAGE_STATE_BASE64_13: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_13 }}
+          LITMEDIA_STORAGE_STATE_BASE64_14: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_14 }}
+          LITMEDIA_STORAGE_STATE_BASE64_15: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_15 }}
+          LITMEDIA_STORAGE_STATE_BASE64_16: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_16 }}
+          LITMEDIA_STORAGE_STATE_BASE64_17: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_17 }}
+          LITMEDIA_STORAGE_STATE_BASE64_18: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_18 }}
+          LITMEDIA_STORAGE_STATE_BASE64_19: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_19 }}
+          LITMEDIA_STORAGE_STATE_BASE64_20: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_20 }}
+          LITMEDIA_STORAGE_STATE_BASE64_21: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_21 }}
+          LITMEDIA_STORAGE_STATE_BASE64_22: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_22 }}
+          LITMEDIA_STORAGE_STATE_BASE64_23: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_23 }}
+          LITMEDIA_STORAGE_STATE_BASE64_24: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_24 }}
+          LITMEDIA_STORAGE_STATE_BASE64_25: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_25 }}
+          LITMEDIA_STORAGE_STATE_BASE64_26: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_26 }}
+          LITMEDIA_STORAGE_STATE_BASE64_27: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_27 }}
+          LITMEDIA_STORAGE_STATE_BASE64_28: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_28 }}
+          LITMEDIA_STORAGE_STATE_BASE64_29: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_29 }}
+          LITMEDIA_STORAGE_STATE_BASE64_30: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_30 }}
+          LITMEDIA_STORAGE_STATE_BASE64_31: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_31 }}
+          LITMEDIA_STORAGE_STATE_BASE64_32: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_32 }}
+          LITMEDIA_STORAGE_STATE_BASE64_33: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_33 }}
+        run: npm run checkin:all
+
+      - name: Upload diagnostic screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: litmedia-checkin-failures
+          path: test-results/*.png
+          if-no-files-found: ignore

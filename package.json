@@ -1,0 +1,17 @@
+{
+  "name": "cron-lit-video",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "auth": "playwright install chromium && node scripts/save-auth.mjs",
+    "secret": "node scripts/export-secret.mjs",
+    "checkin": "node scripts/checkin.mjs",
+    "checkin:all": "node scripts/checkin-all.mjs",
+    "check": "node --check scripts/save-auth.mjs && node --check scripts/checkin.mjs && node --check scripts/checkin-all.mjs && node --check scripts/export-secret.mjs && node --check scripts/litmedia-checkin.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.54.0",
+    "playwright": "^1.61.1"
+  }
+}
