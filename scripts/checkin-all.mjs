@@ -1,4 +1,5 @@
 import { existsSync } from 'node:fs';
+import { appendFile, mkdir, writeFile } from 'node:fs/promises';
 import { chromium } from 'playwright';
 import { defaultTargetUrl, runLitMediaCheckin } from './litmedia-checkin.mjs';
 
@@ -55,8 +56,12 @@ let skipped = skippedAccounts.length;
 let failed = 0;
 let succeeded = 0;
 let alreadyDone = 0;
+/** @type {Array<object>} */
 const failedAccounts = [];
+/** @type {Array<object>} */
 const successAccounts = [];
+/** @type {Array<object>} */
+const allResults = [];
 
 printConfiguredAccounts(configuredAccounts, {
   accountMin,
@@ -65,7 +70,17 @@ printConfiguredAccounts(configuredAccounts, {
 });
 
 if (configuredAccounts.length === 0) {
-  printSummary({ configured: 0, skipped, failed, succeeded, alreadyDone });
+  const summary = {
+    configured: 0,
+    skipped,
+    failed,
+    succeeded,
+    alreadyDone,
+    accountMin,
+    accountMax
+  };
+  printSummary(summary);
+  await writeGithubSummary(summary);
   process.exit(0);
 }
 
@@ -96,20 +111,33 @@ for (let i = 0; i < configuredAccounts.length; i += 1) {
       console.log(`Continue day streak: ${result.continueDay}`);
     }
 
+    const row = { ...account, result, error: null };
+
     if (result.status === 'checked_in') {
       succeeded += 1;
-      successAccounts.push({ ...account, result });
+      successAccounts.push(row);
+      allResults.push(row);
     } else if (result.status === 'already_done') {
       alreadyDone += 1;
-      successAccounts.push({ ...account, result });
+      successAccounts.push(row);
+      allResults.push(row);
     } else {
       failed += 1;
-      failedAccounts.push({ ...account, result });
+      const failRow = { ...row, error: result.message || result.status };
+      failedAccounts.push(failRow);
+      allResults.push(failRow);
       console.error(`Account ${account.index} did not confirm reward points (${result.status}).`);
     }
   } catch (error) {
     failed += 1;
-    failedAccounts.push(account);
+    const message = error instanceof Error ? error.message : String(error);
+    const failRow = {
+      ...account,
+      result: { status: 'failed', message },
+      error: message
+    };
+    failedAccounts.push(failRow);
+    allResults.push(failRow);
     console.error(error instanceof Error ? error.stack : error);
     console.error(`Account ${account.index} failed.`);
   } finally {
@@ -123,7 +151,18 @@ for (let i = 0; i < configuredAccounts.length; i += 1) {
   }
 }
 
-printSummary({ configured: configuredAccounts.length, skipped, failed, succeeded, alreadyDone });
+const summary = {
+  configured: configuredAccounts.length,
+  skipped,
+  failed,
+  succeeded,
+  alreadyDone,
+  accountMin,
+  accountMax
+};
+
+printSummary(summary);
+await writeGithubSummary(summary);
 
 if (failed > 0 && failOnAccountError) {
   process.exitCode = 1;
@@ -241,18 +280,192 @@ function printSummary({ configured, skipped, failed, succeeded = 0, alreadyDone 
     console.log('');
     console.log('OK accounts:');
     for (const account of successAccounts) {
-      const points =
-        account.result?.pointsAwarded != null ? ` reward=+${account.result.pointsAwarded}` : '';
-      const streak =
-        account.result?.continueDay != null ? ` streak=${account.result.continueDay}` : '';
-      console.log(`- #${account.index} ${account.label}: ${account.result.status}${points}${streak}`);
+      console.log(`- #${account.index} ${account.label}: ${formatResultLine(account)}`);
     }
   }
 
   if (failedAccounts.length > 0) {
     console.log('');
-    const labels = failedAccounts.map((account) => `${account.index} (${account.label})`).join(', ');
-    console.warn(`Accounts needing attention: ${labels}`);
+    console.log('Failed accounts:');
+    for (const account of failedAccounts) {
+      console.log(`- #${account.index} ${account.label}: ${formatResultLine(account)}`);
+    }
     console.warn('Failure screenshots were saved under test-results for troubleshooting.');
+  }
+}
+
+function formatResultLine(account) {
+  const status = account.result?.status ?? 'unknown';
+  const parts = [status];
+  if (account.result?.pointsAwarded != null) {
+    parts.push(`reward=+${account.result.pointsAwarded}`);
+  }
+  if (account.result?.continueDay != null) {
+    parts.push(`streak=${account.result.continueDay}`);
+  }
+  if (account.error) {
+    parts.push(`error=${compactMessage(account.error)}`);
+  }
+  return parts.join(' ');
+}
+
+function compactMessage(message, max = 120) {
+  const text = String(message).replace(/\s+/g, ' ').trim();
+  if (text.length <= max) return text;
+  return `${text.slice(0, max - 1)}…`;
+}
+
+function shortLabel(label) {
+  return String(label)
+    .replace(/\s*\(\d+\)\s*$/, '')
+    .replace(/-checkin$/i, '')
+    .trim();
+}
+
+function statusBadge(status) {
+  switch (status) {
+    case 'checked_in':
+      return '✅ checked_in';
+    case 'already_done':
+      return '☑️ already_done';
+    case 'failed':
+    case 'missing':
+      return '❌ failed';
+    case 'skipped':
+      return '⏭️ skipped';
+    default:
+      return `❓ ${status || 'unknown'}`;
+  }
+}
+
+function buildSummaryMarkdown({
+  configured,
+  skipped,
+  failed,
+  succeeded = 0,
+  alreadyDone = 0,
+  accountMin,
+  accountMax
+}) {
+  const ok = succeeded + alreadyDone;
+  const headline =
+    failed === 0 && configured > 0
+      ? '✅ All configured accounts OK'
+      : failed > 0
+        ? `⚠️ ${failed} account(s) need attention`
+        : 'ℹ️ No configured accounts';
+
+  const now = new Date().toISOString();
+  const lines = [
+    '## LitMedia daily check-in',
+    '',
+    `**${headline}**`,
+    '',
+    '| Metric | Count |',
+    '| --- | ---: |',
+    `| Configured (ran) | ${configured} |`,
+    `| New check-in | ${succeeded} |`,
+    `| Already done | ${alreadyDone} |`,
+    `| OK total | ${ok} |`,
+    `| Failed | ${failed} |`,
+    `| Skipped (no secret) | ${skipped} |`,
+    '',
+    `<sub>Accounts ${accountMin}–${accountMax} · ${now}</sub>`,
+    ''
+  ];
+
+  if (failedAccounts.length > 0) {
+    lines.push('### ⚠️ Needs attention', '');
+    lines.push('| # | Account | Error |');
+    lines.push('| ---: | --- | --- |');
+    for (const account of [...failedAccounts].sort((a, b) => a.index - b.index)) {
+      lines.push(
+        `| ${account.index} | ${escapeMd(shortLabel(account.label))} | ${escapeMd(compactMessage(account.error || account.result?.message || 'failed', 160))} |`
+      );
+    }
+    lines.push('', '_Screenshots (if any): artifact `litmedia-checkin-failures`._', '');
+  }
+
+  if (allResults.length > 0) {
+    lines.push('### Account results', '');
+    lines.push('| # | Account | Status | Reward | Streak | Note |');
+    lines.push('| ---: | --- | --- | ---: | ---: | --- |');
+
+    const sorted = [...allResults].sort((a, b) => a.index - b.index);
+    for (const account of sorted) {
+      const status = account.result?.status ?? 'unknown';
+      const reward =
+        account.result?.pointsAwarded != null ? `+${account.result.pointsAwarded}` : '—';
+      const streak = account.result?.continueDay != null ? String(account.result.continueDay) : '—';
+      let note = '—';
+      if (status === 'checked_in') note = 'new today';
+      else if (status === 'already_done') note = 'claimed earlier';
+      else if (account.error) note = compactMessage(account.error, 80);
+
+      lines.push(
+        `| ${account.index} | ${escapeMd(shortLabel(account.label))} | ${statusBadge(status)} | ${reward} | ${streak} | ${escapeMd(note)} |`
+      );
+    }
+    lines.push('');
+  }
+
+  if (skippedAccounts.length > 0) {
+    const ids = skippedAccounts.map((a) => a.index).join(', ');
+    lines.push('### Skipped', '');
+    lines.push(`No secret / storage: **#${ids}**`, '');
+  }
+
+  if (configured === 0) {
+    lines.push(
+      '### Next step',
+      '',
+      'Add GitHub Secrets `LITMEDIA_STORAGE_STATE_BASE64_N` or local `auth/account-N.storageState.json`.',
+      ''
+    );
+  }
+
+  lines.push(
+    '---',
+    '',
+    '<sub>Status: `checked_in` = claimed this run · `already_done` = already claimed today · `failed` = needs re-auth or layout change</sub>',
+    ''
+  );
+
+  return lines.join('\n');
+}
+
+function escapeMd(value) {
+  return String(value).replace(/\|/g, '\\|').replace(/\r?\n/g, ' ');
+}
+
+async function writeGithubSummary(summary) {
+  const markdown = buildSummaryMarkdown(summary);
+
+  // Always print a compact block for log searchability.
+  console.log('');
+  console.log('----- GITHUB SUMMARY (markdown) -----');
+  console.log(markdown);
+  console.log('----- END GITHUB SUMMARY -----');
+
+  // Local copy for artifact / debugging.
+  try {
+    await mkdir('test-results', { recursive: true });
+    await writeFile('test-results/checkin-summary.md', markdown, 'utf8');
+  } catch {
+    // ignore local write failures
+  }
+
+  const summaryPath = process.env.GITHUB_STEP_SUMMARY;
+  if (!summaryPath) {
+    return;
+  }
+
+  try {
+    await appendFile(summaryPath, markdown, 'utf8');
+    console.log(`Wrote GitHub Job Summary to ${summaryPath}`);
+  } catch (error) {
+    console.warn(
+      `Could not write GITHUB_STEP_SUMMARY: ${error instanceof Error ? error.message : error}`
+    );
   }
 }
