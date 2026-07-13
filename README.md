@@ -1,5 +1,7 @@
 # CronLitVideo
 
+English | [中文](./README.zh-CN.md)
+
 LitMedia daily check-in helper powered by Playwright and GitHub Actions.
 
 ## How it works
@@ -53,7 +55,7 @@ auth/account-1.storageState.json
 >
 > The same rule applies to `secret`: use `cmd /c npm run secret -- 4`, not `--4`.
 > After a successful auth, the terminal should print `Saved Playwright storage state to auth/account-N.storageState.json`. If you see `litmedia.storageState.json`, the account number was not passed.
-Test the check-in locally:
+Test the check-in locally (single account; default file `auth/litmedia.storageState.json`):
 
 ```powershell
 npm run checkin
@@ -64,6 +66,41 @@ PowerShell execution policy workaround:
 ```powershell
 cmd /c npm run checkin
 ```
+
+To run all configured accounts locally in sequence (same isolation model as GitHub Actions), use `checkin:all`. For each account `N` it prefers the env secret `LITMEDIA_STORAGE_STATE_BASE64_N`, otherwise the local file `auth/account-N.storageState.json`. Accounts with neither are skipped.
+
+```powershell
+cmd /c npm run checkin:all
+```
+
+Or, if PowerShell does not block npm:
+
+```powershell
+npm run checkin:all
+```
+
+Optional environment variables for local multi-account runs:
+
+```text
+LITMEDIA_ACCOUNT_MIN=1
+LITMEDIA_ACCOUNT_MAX=33
+LITMEDIA_DELAY_MIN_MS=5000
+LITMEDIA_DELAY_MAX_MS=15000
+LITMEDIA_URL=https://www.litmedia.ai/tw/app/litvideo/home/
+LITMEDIA_FAIL_ON_ACCOUNT_ERROR=false
+HEADLESS=true
+```
+
+Example: only accounts 1–5, with a visible browser:
+
+```powershell
+$env:LITMEDIA_ACCOUNT_MIN="1"
+$env:LITMEDIA_ACCOUNT_MAX="5"
+$env:HEADLESS="false"
+cmd /c npm run checkin:all
+```
+
+A run summary is written to `test-results/checkin-summary.md`.
 
 ## GitHub Actions setup
 
