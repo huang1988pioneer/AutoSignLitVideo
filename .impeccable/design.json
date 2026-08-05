@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-05T00:00:00+08:00",
+  "title": "Design System: LitMedia Flow",
+  "extensions": {
+    "colorMeta": {
+      "graphite-teal": { "role": "neutral", "displayName": "Graphite Rail", "canonical": "#10383B", "tonalRamp": ["#102D2F", "#10383B", "#1C5354", "#3A6B6C", "#5D8585", "#88A9A7", "#B7CFCD", "#E3EFEE"] },
+      "teal-action": { "role": "primary", "displayName": "Deliberate Teal", "canonical": "#087F78", "tonalRamp": ["#043B37", "#056B66", "#087F78", "#24958D", "#53AAA3", "#86C1BB", "#B9D9D4", "#E5F2EF"] },
+      "work-surface": { "role": "neutral", "displayName": "Quiet Paper", "canonical": "#F5F7F8", "tonalRamp": ["#263B42", "#58707A", "#879AA1", "#B3C0C4", "#D7DFE1", "#E9EEEE", "#F5F7F8", "#FFFFFF"] },
+      "caution-surface": { "role": "neutral", "displayName": "Human-Verification Amber", "canonical": "#FFF4E5", "tonalRamp": ["#4F3511", "#714D16", "#9A6F25", "#C49445", "#E2B96E", "#F4D7A5", "#FFF4E5", "#FFFBEF"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Workspace Display", "purpose": "Screen titles at the top of each workspace view." },
+      "title": { "displayName": "Task Title", "purpose": "Card and section headings." },
+      "body": { "displayName": "Operational Body", "purpose": "Explanations, navigation labels, and account rows." },
+      "label": { "displayName": "Supporting Label", "purpose": "Metrics, rail grouping, and supporting metadata." },
+      "mono": { "displayName": "Secret Identifier", "purpose": "Generated GitHub Secret names only." }
+    },
+    "shadows": [],
+    "motion": [],
+    "breakpoints": []
+  },
+  "components": [
+    { "name": "Primary Button", "kind": "button", "refersTo": "button-primary", "description": "Starts a deliberate local operation.", "html": "<button class=\"ds-btn-primary\">Run check-in</button>", "css": ".ds-btn-primary { background:#087F78; color:#fff; padding:11px 18px; border:0; border-radius:7px; font:600 14px Inter, sans-serif; cursor:pointer; } .ds-btn-primary:hover { background:#056B66; } .ds-btn-primary:focus-visible { outline:2px solid #10383B; outline-offset:2px; }" },
+    { "name": "Secondary Button", "kind": "button", "refersTo": "button-secondary", "description": "Supports a primary task without competing with it.", "html": "<button class=\"ds-btn-secondary\">Refresh status</button>", "css": ".ds-btn-secondary { background:#E7EFEF; color:#183941; padding:10px 15px; border:0; border-radius:7px; font:400 14px Inter, sans-serif; cursor:pointer; } .ds-btn-secondary:hover { background:#D5E5E4; } .ds-btn-secondary:focus-visible { outline:2px solid #087F78; outline-offset:2px; }" },
+    { "name": "Rail Navigation", "kind": "nav", "refersTo": "navigation-active", "description": "Fixed task navigation in the permanent dark rail.", "html": "<nav class=\"ds-rail\"><button class=\"ds-nav-active\">GitHub Actions overview</button><button class=\"ds-nav\">Create sign-in state</button></nav>", "css": ".ds-rail { width:220px; padding:12px; background:#10383B; font-family:Inter, sans-serif; } .ds-nav,.ds-nav-active { display:block; width:100%; padding:11px 13px; border:0; border-radius:8px; text-align:left; font-size:14px; cursor:pointer; } .ds-nav { color:#C8DAD8; background:transparent; } .ds-nav:hover { background:#1E5052; color:#fff; } .ds-nav-active { color:#fff; background:#20585A; font-weight:600; } .ds-nav:focus-visible,.ds-nav-active:focus-visible { outline:2px solid #fff; outline-offset:2px; }" },
+    { "name": "Task Surface", "kind": "card", "description": "White task container on quiet paper, grouped without shadows.", "html": "<section class=\"ds-card\"><strong>Local readiness</strong><p>Read state before acting.</p></section>", "css": ".ds-card { padding:26px; border-radius:14px; background:#fff; color:#142E38; font:14px Inter, sans-serif; } .ds-card strong { display:block; font-size:20px; font-weight:600; } .ds-card p { margin:6px 0 0; color:#58707A; }" },
+    { "name": "Local Status Panel", "kind": "custom", "description": "Low-emphasis panel for directly observed local readiness or status.", "html": "<div class=\"ds-status\">Reading local account sign-in status.</div>", "css": ".ds-status { padding:10px 13px; border-radius:8px; background:#EEF4F4; color:#34535A; font:14px Inter, sans-serif; }" },
+    { "name": "Secret Identifier", "kind": "custom", "description": "Machine-readable GitHub Secret name, visually separated from prose.", "html": "<code class=\"ds-secret\">LITMEDIA_STORAGE_STATE_BASE64_1</code>", "css": ".ds-secret { display:inline-block; padding:8px 12px; border-radius:7px; background:#E7F3F1; color:#056B66; font:14px Consolas, monospace; }" }
+  ],
+  "narrative": {
+    "northStar": "The Local Control Room",
+    "overview": "LitMedia Flow is an Operate-mode desktop interface: quiet, fixed, and honest about what is known locally. A cool graphite-teal rail carries orientation and safety guidance; a soft white work area carries the action sequence, readiness counts, and account-by-account evidence. The restrained teal action color is reserved for deliberate user-triggered handoffs, never remote-success theater.\n\nThe UI should feel like a capable desktop companion to an existing automation, not a cloud dashboard. It uses a compact Inter hierarchy, clear tonal surfaces, and explanatory status copy to let users launch check-in or progress through login, account alias, and GitHub Secret setup with confidence.",
+    "keyCharacteristics": ["Fixed dark navigation rail with a scrollable, spacious white workspace.", "Local readiness and account state take precedence over aggregate or opaque remote metrics.", "Flat tonal layering, compact controls, and human-assisted verification language."],
+    "rules": [
+      { "name": "Evidence Before Accent", "body": "Teal signals a real local action or a directly observed readiness value. Do not use it to imply that a remote GitHub workflow has succeeded.", "section": "colors" },
+      { "name": "Explain, Then Act", "body": "A task card gives a short explanation before its command, so the user knows whether it opens a browser, copies local state, or requires manual verification.", "section": "typography" },
+      { "name": "Tonal Depth", "body": "Establish hierarchy with surface color and spacing, never with decorative drop shadows or glass effects.", "section": "elevation" }
+    ],
+    "dos": ["Do keep the 244px graphite-teal rail as the stable orientation layer on desktop.", "Do surface account isolation and local readiness clearly, including the 1–33 account range and scrollable status list.", "Do use teal for explicit operations and directly observed local counts only.", "Do lead every browser/login handoff with concise copy that tells the user what will happen and what remains manual."],
+    "donts": ["Don't represent GitHub Actions or a remote check-in as successful without a direct result the app has actually observed.", "Don't add password collection, CAPTCHA bypass, OTP automation, or copy that suggests the app performs those tasks.", "Don't introduce dashboard-style charts, heavy shadows, gradients, or large decorative metrics; this is a local operating surface.", "Don't turn the four task destinations into oversized cards or hide safety guidance behind secondary navigation."]
+  }
+}
