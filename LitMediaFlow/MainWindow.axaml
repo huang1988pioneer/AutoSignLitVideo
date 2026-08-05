@@ -1,0 +1,107 @@
+<!--
+THESIS: A quiet three-step handoff for safely refreshing LitMedia automation state; it refuses a crowded configuration dashboard.
+OWN-WORLD: Cool graphite navigation, soft white work surface, restrained teal for action and status, compact Inter UI typography.
+STORY: Choose an isolated account, complete the familiar human sign-in in Chromium, then copy the matching Secret value to GitHub.
+FIRST VIEWPORT: Dark left rail holds navigation and safety promise; the wide right workspace gives the sign-in flow one clear primary action.
+FORM: Operate-mode desktop workflow, adapted from the supplied AutoSignOiiOii reference's sidebar and account-state pattern.
+FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md
+-->
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="LitMediaFlow.MainWindow"
+        Width="980" Height="760" MinWidth="780" MinHeight="620"
+        Title="LitMedia Flow — 登入狀態管理"
+        Background="#F4F7F8">
+  <Window.Styles>
+    <Style Selector="Border.panel"><Setter Property="Background" Value="#FFFFFF"/><Setter Property="CornerRadius" Value="12"/><Setter Property="Padding" Value="24"/></Style>
+    <Style Selector="TextBlock.muted"><Setter Property="Foreground" Value="#597078"/></Style>
+    <Style Selector="TextBlock.sectionTitle"><Setter Property="FontSize" Value="20"/><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="Foreground" Value="#19323A"/></Style>
+    <Style Selector="Button.nav"><Setter Property="Background" Value="Transparent"/><Setter Property="Foreground" Value="#B9CCCB"/><Setter Property="HorizontalAlignment" Value="Stretch"/><Setter Property="HorizontalContentAlignment" Value="Left"/><Setter Property="Padding" Value="12,10"/><Setter Property="CornerRadius" Value="7"/></Style>
+    <Style Selector="Button.nav:pointerover"><Setter Property="Background" Value="#24464A"/><Setter Property="Foreground" Value="White"/></Style>
+    <Style Selector="Button.primary"><Setter Property="Background" Value="#087A73"/><Setter Property="Foreground" Value="White"/><Setter Property="Padding" Value="18,11"/><Setter Property="CornerRadius" Value="7"/></Style>
+    <Style Selector="Button.primary:pointerover"><Setter Property="Background" Value="#05655F"/></Style>
+  </Window.Styles>
+  <Grid ColumnDefinitions="244,*">
+    <Border Background="#12363A" Padding="24">
+      <Grid RowDefinitions="Auto,*,Auto">
+        <StackPanel Spacing="7">
+          <TextBlock Text="LitMedia Flow" FontSize="23" FontWeight="Bold" Foreground="White"/>
+          <TextBlock Text="每日簽到的安全登入助手" Foreground="#B9CCCB"/>
+        </StackPanel>
+        <StackPanel Grid.Row="1" Margin="0,38,0,0" Spacing="5" VerticalAlignment="Top">
+          <TextBlock Text="工作區" Foreground="#89AAA9" FontSize="12" FontWeight="SemiBold" Margin="12,0,0,4"/>
+          <Button Classes="nav" Click="LoginNav_OnClick">登入狀態</Button>
+          <Button Classes="nav" Click="AccountsNav_OnClick">帳號別名</Button>
+          <Button Classes="nav" Click="GuideNav_OnClick">GitHub 設定說明</Button>
+        </StackPanel>
+        <Border Grid.Row="2" Background="#1D484B" CornerRadius="9" Padding="14">
+          <StackPanel Spacing="6">
+            <TextBlock Text="你的密碼不會被保存" Foreground="White" FontWeight="SemiBold" FontSize="12"/>
+            <TextBlock Text="請在開啟的瀏覽器自行登入；驗證碼、OTP 與 CAPTCHA 必須由你完成。" TextWrapping="Wrap" Foreground="#C9DFDD" FontSize="12"/>
+          </StackPanel>
+        </Border>
+      </Grid>
+    </Border>
+
+    <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+      <StackPanel Margin="42,38,42,32" MaxWidth="650" Spacing="20">
+        <StackPanel x:Name="LoginView" Spacing="20">
+          <StackPanel Spacing="6">
+            <TextBlock Text="更新登入狀態" FontSize="30" FontWeight="SemiBold" Foreground="#19323A"/>
+            <TextBlock Classes="muted" Text="為每個帳號建立獨立的 Playwright 登入狀態，再貼到對應的 GitHub Secret。" TextWrapping="Wrap"/>
+          </StackPanel>
+          <Border Classes="panel">
+            <Grid ColumnDefinitions="38,*" RowDefinitions="Auto,Auto" RowSpacing="12">
+              <TextBlock Text="1" Foreground="#087A73" FontWeight="Bold" FontSize="16" VerticalAlignment="Center"/>
+              <StackPanel Grid.Column="1" Spacing="9">
+                <TextBlock Classes="sectionTitle" Text="選擇帳號"/>
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                  <ComboBox x:Name="AccountComboBox" Width="156" SelectedIndex="0"/>
+                  <TextBlock x:Name="AliasText" Classes="muted" VerticalAlignment="Center"/>
+                </StackPanel>
+                <Border Background="#E6F3F1" CornerRadius="6" Padding="11,7" HorizontalAlignment="Left">
+                  <TextBlock x:Name="SecretNameText" Foreground="#075E58" FontFamily="Consolas"/>
+                </Border>
+              </StackPanel>
+            </Grid>
+          </Border>
+          <Border Classes="panel">
+            <Grid ColumnDefinitions="38,*" RowDefinitions="Auto,Auto" RowSpacing="12">
+              <TextBlock Text="2" Foreground="#087A73" FontWeight="Bold" FontSize="16" VerticalAlignment="Top"/>
+              <StackPanel Grid.Column="1" Spacing="11">
+                <TextBlock Classes="sectionTitle" Text="在瀏覽器完成登入"/>
+                <TextBlock Classes="muted" Text="工具會執行現有的登入腳本並開啟 Chromium。確認已登入 LitMedia 後，回到終端機按 Enter 儲存狀態。" TextWrapping="Wrap"/>
+                <Button x:Name="RunLoginButton" Classes="primary" Click="RunLoginButton_OnClick" HorizontalAlignment="Left">開啟登入流程</Button>
+              </StackPanel>
+            </Grid>
+          </Border>
+          <Border Classes="panel">
+            <Grid ColumnDefinitions="38,*" RowDefinitions="Auto,Auto" RowSpacing="12">
+              <TextBlock Text="3" Foreground="#087A73" FontWeight="Bold" FontSize="16" VerticalAlignment="Top"/>
+              <StackPanel Grid.Column="1" Spacing="11">
+                <TextBlock Classes="sectionTitle" Text="複製 GitHub Secret 值"/>
+                <TextBlock x:Name="StateDescription" Classes="muted" TextWrapping="Wrap"/>
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                  <Button x:Name="CopyStateButton" Classes="primary" IsEnabled="False" Click="CopyStateButton_OnClick">複製 Base64</Button>
+                  <Button x:Name="CopySecretButton" IsEnabled="False" Click="CopySecretButton_OnClick">複製 Secret 名稱</Button>
+                </StackPanel>
+              </StackPanel>
+            </Grid>
+          </Border>
+          <Border Background="#EAF0F1" CornerRadius="8" Padding="14"><TextBlock x:Name="StatusText" Foreground="#29464B" Text="準備就緒。" TextWrapping="Wrap"/></Border>
+        </StackPanel>
+
+        <StackPanel x:Name="AccountsView" IsVisible="False" Spacing="20">
+          <StackPanel Spacing="6"><TextBlock Text="帳號別名" FontSize="30" FontWeight="SemiBold" Foreground="#19323A"/><TextBlock Classes="muted" Text="別名只儲存在這台電腦，方便辨識每個隔離的登入狀態。" TextWrapping="Wrap"/></StackPanel>
+          <Border Classes="panel"><StackPanel Spacing="14"><TextBlock Classes="sectionTitle" Text="1–33 號帳號"/><ScrollViewer MaxHeight="430" VerticalScrollBarVisibility="Auto"><StackPanel x:Name="AliasListPanel" Spacing="8"/></ScrollViewer><Button HorizontalAlignment="Left" Click="SaveAliasesButton_OnClick">儲存別名</Button></StackPanel></Border>
+        </StackPanel>
+
+        <StackPanel x:Name="GuideView" IsVisible="False" Spacing="20">
+          <StackPanel Spacing="6"><TextBlock Text="GitHub 設定說明" FontSize="30" FontWeight="SemiBold" Foreground="#19323A"/><TextBlock Classes="muted" Text="每個帳號都使用不同的 Secret，讓 GitHub Actions 的瀏覽器工作階段彼此隔離。" TextWrapping="Wrap"/></StackPanel>
+          <Border Classes="panel"><StackPanel Spacing="12"><TextBlock Classes="sectionTitle" Text="下一步"/><TextBlock Text="1. 在本工具完成登入，並複製 Base64 值。&#10;2. 到 Repository Settings → Secrets and variables → Actions。&#10;3. 新增或更新畫面顯示的 LITMEDIA_STORAGE_STATE_BASE64_N。&#10;4. 從 GitHub Actions 手動執行工作流程，確認帳號狀態。" TextWrapping="Wrap" LineHeight="24"/><Button HorizontalAlignment="Left" Click="OpenActionsButton_OnClick">開啟 GitHub Actions</Button></StackPanel></Border>
+          <Border Background="#FFF6E8" CornerRadius="8" Padding="14"><TextBlock Foreground="#714D16" Text="安全提醒：若 LitMedia 要求新的 OTP、CAPTCHA 或風險驗證，請重新執行登入流程；工具不會略過這些驗證。" TextWrapping="Wrap"/></Border>
+        </StackPanel>
+      </StackPanel>
+    </ScrollViewer>
+  </Grid>
+</Window>

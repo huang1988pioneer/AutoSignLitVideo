@@ -4,6 +4,16 @@ English | [中文](./README.zh-CN.md)
 
 LitMedia daily check-in helper powered by Playwright and GitHub Actions.
 
+## Desktop helper (Avalonia)
+
+`LitMediaFlow` is a small Windows desktop companion inspired by AutoSignOiiOii. It keeps the existing Playwright workflow intact while making per-account sign-in state easier to prepare:
+
+```powershell
+dotnet run --project LitMediaFlow/LitMediaFlow.csproj
+```
+
+Choose an account, open the interactive login flow, then copy its Base64 storage state to the matching `LITMEDIA_STORAGE_STATE_BASE64_N` GitHub Secret. Passwords are never stored by the app; OTP, CAPTCHA, and risk checks must still be completed manually.
+
 ## How it works
 
 1. Run an interactive login locally and save Playwright storage state for each account.

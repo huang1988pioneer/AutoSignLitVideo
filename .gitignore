@@ -6,3 +6,6 @@ test-results/
 auth/
 *.log
 
+# .NET build output
+[Bb]in/
+[Oo]bj/
