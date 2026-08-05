@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs';
 import { appendFile, mkdir, writeFile } from 'node:fs/promises';
-import { chromium } from 'playwright';
+import { launchBrowser, resolveBrowserName } from './browser.mjs';
 import { defaultTargetUrl, runLitMediaCheckin } from './litmedia-checkin.mjs';
 
 const accounts = [
@@ -45,6 +45,7 @@ const targetUrl = process.env.LITMEDIA_URL?.trim() || defaultTargetUrl;
 const accountMin = parseAccountBound(process.env.LITMEDIA_ACCOUNT_MIN, 1);
 const accountMax = parseAccountBound(process.env.LITMEDIA_ACCOUNT_MAX, 33);
 const failOnAccountError = parseBoolean(process.env.LITMEDIA_FAIL_ON_ACCOUNT_ERROR, false);
+const browserName = resolveBrowserName(process.env.LITMEDIA_BROWSER);
 
 const selectedAccounts = accounts.filter(([index]) => index >= accountMin && index <= accountMax);
 
@@ -62,6 +63,10 @@ const failedAccounts = [];
 const successAccounts = [];
 /** @type {Array<object>} */
 const allResults = [];
+
+console.log(
+  `Playwright browser: ${browserName} (set LITMEDIA_BROWSER=firefox|edge for fallback)`
+);
 
 printConfiguredAccounts(configuredAccounts, {
   accountMin,
@@ -91,7 +96,7 @@ for (let i = 0; i < configuredAccounts.length; i += 1) {
 
   let browser;
   try {
-    browser = await chromium.launch({ headless: process.env.HEADLESS !== 'false' });
+    browser = await launchBrowser({ browserName });
     const result = await runLitMediaCheckin(browser, {
       accountIndex: String(account.index),
       accountLabel: account.label,

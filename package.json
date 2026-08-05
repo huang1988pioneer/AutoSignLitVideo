@@ -4,11 +4,17 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "auth": "playwright install chromium && node scripts/save-auth.mjs",
+    "auth": "node scripts/save-auth.mjs",
+    "auth:firefox": "node scripts/save-auth.mjs --browser firefox",
+    "auth:edge": "node scripts/save-auth.mjs --browser edge",
     "secret": "node scripts/export-secret.mjs",
     "checkin": "node scripts/checkin.mjs",
     "checkin:all": "node scripts/checkin-all.mjs",
-    "check": "node --check scripts/save-auth.mjs && node --check scripts/checkin.mjs && node --check scripts/checkin-all.mjs && node --check scripts/export-secret.mjs && node --check scripts/litmedia-checkin.mjs"
+    "browsers": "playwright install chromium firefox msedge",
+    "browsers:chromium": "playwright install chromium",
+    "browsers:firefox": "playwright install firefox",
+    "browsers:edge": "playwright install msedge",
+    "check": "node --check scripts/browser.mjs && node --check scripts/save-auth.mjs && node --check scripts/checkin.mjs && node --check scripts/checkin-all.mjs && node --check scripts/export-secret.mjs && node --check scripts/litmedia-checkin.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.54.0",

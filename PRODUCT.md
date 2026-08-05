@@ -26,6 +26,7 @@ Users work at a desktop before configuring GitHub Actions. The underlying reposi
 
 - Supports numbered accounts 1 through 33, each with its own storage-state file.
 - Runs the existing `npm run auth -- N` flow and exports Base64 through the OS clipboard.
+- Lets the user choose Playwright browser: Chromium (default), Firefox, or Edge (fallbacks), and keeps that preference for the login handoff.
 - Uses GitHub CLI when available to open the repository Actions page.
 - Does not collect or save passwords, bypass verification, or automatically interact with CAPTCHA.
 

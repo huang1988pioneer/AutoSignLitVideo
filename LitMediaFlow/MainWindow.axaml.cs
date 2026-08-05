@@ -8,18 +8,29 @@ namespace LitMediaFlow;
 public partial class MainWindow : Window
 {
     private const int AccountCount = 33;
+    private static readonly string[] BrowserOptions =
+    [
+        "Chromium（預設）",
+        "Firefox（備案）",
+        "Edge（備案）"
+    ];
     private readonly string _workspace = FindWorkspace();
     private readonly GitHubActionsService _github = new();
     private readonly Dictionary<int, string> _aliases = LoadAliases();
     private readonly Dictionary<int, TextBox> _aliasInputs = new();
+    private string _browser = LoadBrowserPreference();
 
     public MainWindow()
     {
         InitializeComponent();
         AccountComboBox.ItemsSource = Enumerable.Range(1, AccountCount).Select(number => $"帳號 {number:00}").ToArray();
         AccountComboBox.SelectionChanged += (_, _) => RefreshAccountState();
+        BrowserComboBox.ItemsSource = BrowserOptions;
+        BrowserComboBox.SelectedIndex = BrowserToIndex(_browser);
+        BrowserComboBox.SelectionChanged += (_, _) => OnBrowserSelectionChanged();
         BuildAliasList();
         RefreshAccountState();
+        RefreshBrowserHint();
         RefreshDashboard();
     }
 
@@ -27,7 +38,9 @@ public partial class MainWindow : Window
     private string StateFile => Path.Combine(_workspace, "auth", $"account-{AccountNumber}.storageState.json");
     private string LegacyStateFile => Path.Combine(_workspace, "auth", "litmedia.storageState.json");
     private string SecretName => $"LITMEDIA_STORAGE_STATE_BASE64_{AccountNumber}";
-    private static string AliasFile => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "LitMediaFlow", "account-aliases.json");
+    private static string AppDataDir => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "LitMediaFlow");
+    private static string AliasFile => Path.Combine(AppDataDir, "account-aliases.json");
+    private static string SettingsFile => Path.Combine(AppDataDir, "settings.json");
 
     private void RefreshDashboard()
     {
@@ -79,14 +92,39 @@ public partial class MainWindow : Window
         CopySecretButton.IsEnabled = state is not null;
     }
 
+    private void OnBrowserSelectionChanged()
+    {
+        _browser = IndexToBrowser(BrowserComboBox.SelectedIndex);
+        SaveBrowserPreference(_browser);
+        RefreshBrowserHint();
+    }
+
+    private void RefreshBrowserHint()
+    {
+        var label = BrowserLabel(_browser);
+        BrowserHintText.Text = $"目前選擇：{label}。建議 GitHub Actions 的 LITMEDIA_BROWSER 與此一致。";
+        LoginFlowHintText.Text =
+            $"程式會以 {label} 開啟 Playwright 登入流程。請自行完成密碼、OTP、CAPTCHA 或任何帳號驗證，並在終端機按 Enter 儲存登入狀態。";
+    }
+
     private void RunLoginButton_OnClick(object? sender, RoutedEventArgs e)
     {
         RunLoginButton.IsEnabled = false;
         try
         {
             if (!OperatingSystem.IsWindows()) throw new PlatformNotSupportedException("登入流程目前需要 Windows 的 cmd.exe。");
-            Process.Start(new ProcessStartInfo { FileName = "cmd.exe", Arguments = $"/k npm install && npm run auth -- {AccountNumber}", WorkingDirectory = _workspace, UseShellExecute = true });
-            StatusText.Text = "已開啟登入終端機。完成登入與必要驗證後，請在終端機按 Enter 儲存登入狀態。";
+            var browserArg = _browser is "chromium" ? string.Empty : $" --browser {_browser}";
+            // Set LITMEDIA_BROWSER so child npm scripts and docs stay consistent; also pass CLI flag for auth.
+            var arguments =
+                $"/k set LITMEDIA_BROWSER={_browser}&& npm install && npm run auth -- {AccountNumber}{browserArg}";
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = "cmd.exe",
+                Arguments = arguments,
+                WorkingDirectory = _workspace,
+                UseShellExecute = true
+            });
+            StatusText.Text = $"已開啟 {BrowserShortLabel(_browser)} 登入終端機。完成登入與必要驗證後，請在終端機按 Enter 儲存登入狀態。";
         }
         catch (Exception ex) { StatusText.Text = $"無法開啟登入流程：{ex.Message}"; }
         finally { RunLoginButton.IsEnabled = true; RefreshAccountState(); }
@@ -223,6 +261,76 @@ public partial class MainWindow : Window
     {
         try { return File.Exists(AliasFile) ? JsonSerializer.Deserialize<Dictionary<int, string>>(File.ReadAllText(AliasFile)) ?? [] : []; }
         catch (JsonException) { return []; }
+    }
+
+    private static int BrowserToIndex(string browser) => browser switch
+    {
+        "firefox" => 1,
+        "edge" => 2,
+        _ => 0
+    };
+
+    private static string IndexToBrowser(int index) => index switch
+    {
+        1 => "firefox",
+        2 => "edge",
+        _ => "chromium"
+    };
+
+    private static string NormalizeBrowser(string? value) => value?.Trim().ToLowerInvariant() switch
+    {
+        "firefox" or "ff" => "firefox",
+        "edge" or "msedge" or "microsoft-edge" or "microsoftedge" => "edge",
+        _ => "chromium"
+    };
+
+    private static string BrowserLabel(string browser) => browser switch
+    {
+        "firefox" => "Firefox（備案）",
+        "edge" => "Edge（備案）",
+        _ => "Chromium（預設）"
+    };
+
+    private static string BrowserShortLabel(string browser) => browser switch
+    {
+        "firefox" => "Firefox",
+        "edge" => "Edge",
+        _ => "Chromium"
+    };
+
+    private static string LoadBrowserPreference()
+    {
+        try
+        {
+            if (!File.Exists(SettingsFile)) return "chromium";
+            using var doc = JsonDocument.Parse(File.ReadAllText(SettingsFile));
+            if (doc.RootElement.TryGetProperty("browser", out var browser) &&
+                browser.GetString()?.Trim().ToLowerInvariant() is { Length: > 0 } value)
+            {
+                return NormalizeBrowser(value);
+            }
+        }
+        catch (JsonException) { /* fall through */ }
+        catch (IOException) { /* fall through */ }
+
+        return "chromium";
+    }
+
+    private static void SaveBrowserPreference(string browser)
+    {
+        try
+        {
+            Directory.CreateDirectory(AppDataDir);
+            var payload = JsonSerializer.Serialize(new Dictionary<string, string>
+            {
+                ["browser"] = NormalizeBrowser(browser)
+            });
+            File.WriteAllText(SettingsFile, payload);
+        }
+        catch (IOException)
+        {
+            // Preference is best-effort; login still works with the in-memory selection.
+        }
     }
 
     private static string FindWorkspace()

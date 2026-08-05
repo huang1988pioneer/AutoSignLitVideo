@@ -36,7 +36,7 @@ cmd /c npm install
 cmd /c npm run auth
 ```
 
-`npm run auth` opens Chromium. Log in to LitMedia, make sure your account is visible, then return to the terminal and press Enter. The login state is saved to:
+`npm run auth` opens **Chromium** by default (recommended). Log in to LitMedia, make sure your account is visible, then return to the terminal and press Enter. The login state is saved to:
 
 ```text
 auth/litmedia.storageState.json
@@ -65,6 +65,48 @@ auth/account-1.storageState.json
 >
 > The same rule applies to `secret`: use `cmd /c npm run secret -- 4`, not `--4`.
 > After a successful auth, the terminal should print `Saved Playwright storage state to auth/account-N.storageState.json`. If you see `litmedia.storageState.json`, the account number was not passed.
+
+### Browser choice (Chromium default; Firefox / Edge fallbacks)
+
+Playwright can use **Chromium** (default), **Firefox**, or **Microsoft Edge** (fallbacks). Use the same browser for login and check-in.
+
+```powershell
+# Default: Chromium
+cmd /c npm run auth -- 1
+
+# Fallback: Firefox
+cmd /c npm run auth -- 1 --browser firefox
+# or:
+cmd /c npm run auth:firefox -- 1
+
+# Fallback: Microsoft Edge (requires Edge on this machine)
+cmd /c npm run auth -- 1 --browser edge
+# or:
+cmd /c npm run auth:edge -- 1
+
+# Optional: preinstall supported browsers
+cmd /c npm run browsers
+```
+
+Environment variable (auth + check-in + CI):
+
+```text
+LITMEDIA_BROWSER=chromium
+# or
+LITMEDIA_BROWSER=firefox
+# or
+LITMEDIA_BROWSER=edge
+```
+
+PowerShell example for local Edge check-in:
+
+```powershell
+$env:LITMEDIA_BROWSER="edge"
+cmd /c npm run checkin:all
+```
+
+In `LitMediaFlow`, open **建立登入狀態** and pick **Chromium（預設）**, **Firefox（備案）**, or **Edge（備案）** before starting login. Keep GitHub Actions on the same browser via repository variable `LITMEDIA_BROWSER` or the manual workflow input.
+
 Test the check-in locally (single account; default file `auth/litmedia.storageState.json`):
 
 ```powershell
@@ -98,6 +140,7 @@ LITMEDIA_DELAY_MIN_MS=5000
 LITMEDIA_DELAY_MAX_MS=15000
 LITMEDIA_URL=https://www.litmedia.ai/tw/app/litvideo/home/
 LITMEDIA_FAIL_ON_ACCOUNT_ERROR=false
+LITMEDIA_BROWSER=chromium
 HEADLESS=true
 ```
 
@@ -156,13 +199,16 @@ cmd /c npm run auth -- 2
 cmd /c npm run secret -- 2
 ```
 
-Optional repository variable:
+Optional repository variables:
 
 ```text
 LITMEDIA_URL=https://www.litmedia.ai/tw/app/litvideo/home/
+LITMEDIA_BROWSER=chromium
 ```
 
-The workflow runs every day at `05:05` and `17:05` Asia/Taipei time, and can also be started manually from the GitHub Actions tab. It installs Playwright once, then runs configured accounts `1` through `33` in sequence. Each account launches its own Chromium browser, uses its own storage state, and closes that browser before the next account starts. Accounts without a matching secret are skipped.
+Set `LITMEDIA_BROWSER=firefox` or `LITMEDIA_BROWSER=edge` if you saved login state with that browser. Manual runs can also pick the browser from the workflow dispatch input (`chromium`, `firefox`, or `edge`).
+
+The workflow runs every day at `05:05` and `17:05` Asia/Taipei time, and can also be started manually from the GitHub Actions tab. It installs the selected Playwright browser once, then runs configured accounts `1` through `33` in sequence. Each account launches its own browser instance, uses its own storage state, and closes that browser before the next account starts. Accounts without a matching secret are skipped.
 
 The design intentionally prioritizes account isolation. The accounts still run sequentially instead of in bulk parallel jobs, but cookies, localStorage, browser contexts, and browser processes are separated per account.
 
@@ -178,4 +224,6 @@ LITMEDIA_DELAY_MAX_MS=15000
 - **Missing `auth/account-N.storageState.json` after auth:** you likely ran `npm run auth --N` (no space). Use `cmd /c npm run auth -- N` with a space after `--`. Check the terminal log: it must say `auth/account-N.storageState.json`, not `auth/litmedia.storageState.json`.
 - If the action says the storage state is missing, confirm the matching numbered secret exists in GitHub Secrets, such as `LITMEDIA_STORAGE_STATE_BASE64_7`.
 - If login expired, rerun `npm run auth` (with `-- N` for numbered accounts), regenerate the base64 value, and update the secret.
+- If Chromium login or check-in fails oddly, try a fallback browser (`--browser firefox` / `--browser edge`, or `LITMEDIA_BROWSER=firefox|edge`), re-save the storage state, and use the same browser in CI.
+- Edge uses the installed Microsoft Edge via Playwright channel `msedge` (`npx playwright install msedge`).
 - If the page layout changes, check the uploaded `litmedia-checkin-failure` screenshot artifact from the failed workflow run.

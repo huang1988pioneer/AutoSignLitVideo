@@ -26,7 +26,7 @@ cmd /c npm install
 cmd /c npm run auth
 ```
 
-`npm run auth` 會開啟 Chromium。登入 LitMedia、確認帳號已顯示後，回到終端機按 Enter。登入狀態會保存到：
+`npm run auth` 預設開啟 **Chromium**（建議）。登入 LitMedia、確認帳號已顯示後，回到終端機按 Enter。登入狀態會保存到：
 
 ```text
 auth/litmedia.storageState.json
@@ -55,6 +55,47 @@ auth/account-1.storageState.json
 >
 > `secret` 也一樣：請用 `cmd /c npm run secret -- 4`，不要寫成 `--4`。
 > 成功後終端應顯示 `Saved Playwright storage state to auth/account-N.storageState.json`。若看到 `litmedia.storageState.json`，代表帳號編號沒有傳入。
+
+### 瀏覽器選擇（Chromium 預設；Firefox / Edge 備案）
+
+Playwright 可使用 **Chromium**（預設）、**Firefox** 或 **Microsoft Edge**（備案）。登入與簽到請使用同一瀏覽器。
+
+```powershell
+# 預設：Chromium
+cmd /c npm run auth -- 1
+
+# 備案：Firefox
+cmd /c npm run auth -- 1 --browser firefox
+# 或：
+cmd /c npm run auth:firefox -- 1
+
+# 備案：Microsoft Edge（本機需已安裝 Edge）
+cmd /c npm run auth -- 1 --browser edge
+# 或：
+cmd /c npm run auth:edge -- 1
+
+# 可選：一次安裝支援的瀏覽器
+cmd /c npm run browsers
+```
+
+環境變數（登入、簽到、CI 共用）：
+
+```text
+LITMEDIA_BROWSER=chromium
+# 或
+LITMEDIA_BROWSER=firefox
+# 或
+LITMEDIA_BROWSER=edge
+```
+
+本機以 Edge 測試簽到：
+
+```powershell
+$env:LITMEDIA_BROWSER="edge"
+cmd /c npm run checkin:all
+```
+
+在 `LitMediaFlow` 桌面端：「建立登入狀態」頁可選 **Chromium（預設）**、**Firefox（備案）** 或 **Edge（備案）**。GitHub Actions 請用倉庫變數 `LITMEDIA_BROWSER` 或手動執行時的 workflow 選項保持一致。
 
 ## 本機測試簽到
 
@@ -99,6 +140,7 @@ LITMEDIA_DELAY_MIN_MS=5000
 LITMEDIA_DELAY_MAX_MS=15000
 LITMEDIA_URL=https://www.litmedia.ai/tw/app/litvideo/home/
 LITMEDIA_FAIL_ON_ACCOUNT_ERROR=false
+LITMEDIA_BROWSER=chromium
 HEADLESS=true
 ```
 
@@ -161,9 +203,12 @@ cmd /c npm run secret -- 2
 
 ```text
 LITMEDIA_URL=https://www.litmedia.ai/tw/app/litvideo/home/
+LITMEDIA_BROWSER=chromium
 ```
 
-工作流程每天在 Asia/Taipei 時區的 `05:05` 與 `17:05` 執行，也可從 GitHub Actions 頁籤手動觸發。會先安裝一次 Playwright，再依序跑帳號 `1` 到 `33`。每個帳號各自啟動 Chromium、使用自己的 storage state，結束後關閉瀏覽器再處理下一個。沒有對應 Secret 的帳號會跳過。
+若登入狀態是用 Firefox / Edge 保存的，請設 `LITMEDIA_BROWSER=firefox` 或 `LITMEDIA_BROWSER=edge`。手動執行 workflow 時也可在輸入項選擇 `chromium`、`firefox` 或 `edge`。
+
+工作流程每天在 Asia/Taipei 時區的 `05:05` 與 `17:05` 執行，也可從 GitHub Actions 頁籤手動觸發。會先安裝所選 Playwright 瀏覽器一次，再依序跑帳號 `1` 到 `33`。每個帳號各自啟動瀏覽器、使用自己的 storage state，結束後關閉再處理下一個。沒有對應 Secret 的帳號會跳過。
 
 設計上優先保證帳號隔離：雖然仍是循序執行（非大量並行），但 cookies、localStorage、browser context 與瀏覽器行程都按帳號分開。
 
@@ -178,5 +223,7 @@ LITMEDIA_DELAY_MAX_MS=15000
 
 - **auth 後沒有 `auth/account-N.storageState.json`：** 多半是執行了 `npm run auth --N`（`--` 後沒空格）。請改用 `cmd /c npm run auth -- N`，並確認日誌顯示的是 `auth/account-N.storageState.json`，而不是 `auth/litmedia.storageState.json`。
 - 若 Action 提示找不到 storage state，請確認 GitHub Secrets 中有對應編號，例如 `LITMEDIA_STORAGE_STATE_BASE64_7`。
+- 若 Chromium 登入或簽到異常，可改用備案瀏覽器（`--browser firefox` / `--browser edge`，或 `LITMEDIA_BROWSER=firefox|edge`），重新保存登入狀態，並在 CI 使用相同瀏覽器。
+- Edge 透過 Playwright channel `msedge` 使用本機 Microsoft Edge（`npx playwright install msedge`）。
 - 若登入過期，請重新執行 `npm run auth`（多帳號用 `-- N`），再產生 base64 並更新 Secret。
 - 若頁面版面變更，請查看失敗 workflow 上傳的 `litmedia-checkin-failure` 截圖 artifact。

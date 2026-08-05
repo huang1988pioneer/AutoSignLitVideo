@@ -8,6 +8,16 @@ on:
     - cron: "5 21 * * *"
     - cron: "5 9 * * *"
   workflow_dispatch:
+    inputs:
+      browser:
+        description: "Playwright browser (chromium default; firefox|edge fallbacks)"
+        required: false
+        default: chromium
+        type: choice
+        options:
+          - chromium
+          - firefox
+          - edge
 
 jobs:
   checkin:
@@ -26,11 +36,46 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Resolve Playwright browser
+        id: browser
+        shell: bash
+        run: |
+          if [ -n "${{ github.event.inputs.browser }}" ]; then
+            BROWSER="${{ github.event.inputs.browser }}"
+          elif [ -n "${{ vars.LITMEDIA_BROWSER }}" ]; then
+            BROWSER="${{ vars.LITMEDIA_BROWSER }}"
+          else
+            BROWSER="chromium"
+          fi
+          BROWSER="$(echo "$BROWSER" | tr '[:upper:]' '[:lower:]')"
+          case "$BROWSER" in
+            chromium|chrome)
+              BROWSER="chromium"
+              INSTALL_TARGET="chromium"
+              ;;
+            firefox|ff)
+              BROWSER="firefox"
+              INSTALL_TARGET="firefox"
+              ;;
+            edge|msedge|microsoft-edge|microsoftedge)
+              BROWSER="edge"
+              INSTALL_TARGET="msedge"
+              ;;
+            *)
+              echo "Unsupported browser: $BROWSER (use chromium, firefox, or edge)" >&2
+              exit 1
+              ;;
+          esac
+          echo "browser=$BROWSER" >> "$GITHUB_OUTPUT"
+          echo "install_target=$INSTALL_TARGET" >> "$GITHUB_OUTPUT"
+          echo "Using Playwright browser: $BROWSER (install: $INSTALL_TARGET)"
+
       - name: Install Playwright browser
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps ${{ steps.browser.outputs.install_target }}
 
       - name: Run configured daily check-ins
         env:
+          LITMEDIA_BROWSER: ${{ steps.browser.outputs.browser }}
           LITMEDIA_URL: ${{ vars.LITMEDIA_URL }}
           LITMEDIA_DELAY_MIN_MS: ${{ vars.LITMEDIA_DELAY_MIN_MS }}
           LITMEDIA_DELAY_MAX_MS: ${{ vars.LITMEDIA_DELAY_MAX_MS }}

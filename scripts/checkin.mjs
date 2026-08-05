@@ -1,7 +1,8 @@
-import { chromium } from 'playwright';
+import { launchBrowser, resolveBrowserName } from './browser.mjs';
 import { defaultTargetUrl, runLitMediaCheckin } from './litmedia-checkin.mjs';
 
-const browser = await chromium.launch({ headless: process.env.HEADLESS !== 'false' });
+const browserName = resolveBrowserName(process.env.LITMEDIA_BROWSER);
+const browser = await launchBrowser({ browserName });
 
 try {
   const result = await runLitMediaCheckin(browser, {
