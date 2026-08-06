@@ -208,16 +208,53 @@ LITMEDIA_BROWSER=chromium
 
 Set `LITMEDIA_BROWSER=firefox` or `LITMEDIA_BROWSER=edge` if you saved login state with that browser. Manual runs can also pick the browser from the workflow dispatch input (`chromium`, `firefox`, or `edge`).
 
-The workflow runs every day at `05:05` and `17:05` Asia/Taipei time, and can also be started manually from the GitHub Actions tab. It installs the selected Playwright browser once, then runs configured accounts `1` through `33` in sequence. Each account launches its own browser instance, uses its own storage state, and closes that browser before the next account starts. Accounts without a matching secret are skipped.
+### Daily schedule (three Taipei windows)
 
-The design intentionally prioritizes account isolation. The accounts still run sequentially instead of in bulk parallel jobs, but cookies, localStorage, browser contexts, and browser processes are separated per account.
+GitHub Actions runs every day in these Asia/Taipei windows (and can also be started manually):
 
-Configured accounts wait a random `5` to `15` seconds between runs by default. You can override this with repository variables:
+| Window (Taipei) | How it starts |
+| --- | --- |
+| 05:00–06:00 | Fires on the hour, then waits a random 0–59 minutes |
+| 13:00–14:00 | Fires on the hour, then waits a random 0–59 minutes |
+| 21:00–22:00 | Fires on the hour, then waits a random 0–59 minutes |
+
+(cron is UTC `0 21 * * *`, `0 5 * * *`, and `0 13 * * *`.)
+
+### 33 accounts: staggered parallel starts
+
+Each scheduled run launches up to **33 account jobs at once** (matrix), but **start times are staggered in order** so they do not all click in the same second:
+
+1. Account 1 starts first (delay 0).
+2. Account 2 starts a random **5–15 seconds** after account 1’s scheduled start.
+3. Account 3 starts a random **5–15 seconds** after account 2’s scheduled start.
+4. And so on through account 33.
+
+If account 1 starts at `T`, account *n* starts around `T + Σ(5…15)` seconds. Neighboring accounts may overlap (no need to wait for the previous browser to finish), but they do not all click simultaneously. Each job uses its own storage state and browser process. Accounts without a matching secret are skipped. GitHub’s own scheduler can also drift, so wall-clock start may be slightly later than the window above.
+
+Local `checkin:all` still runs accounts one after another and waits a random `5` to `15` seconds **between** finished runs (override with repository / env variables):
 
 ```text
 LITMEDIA_DELAY_MIN_MS=5000
 LITMEDIA_DELAY_MAX_MS=15000
 ```
+
+### Streak days (continuous check-in)
+
+Each successful or already-done check-in records LitMedia’s `continue_day` as **streak days**:
+
+| File | Purpose |
+| --- | --- |
+| `test-results/checkin-result-N.json` | Per-account result including `streakDays` |
+| `test-results/streaks.json` | Aggregate registry (local `checkin:all` or CI summarize) |
+| `test-results/streaks.md` | Same data as a Markdown table |
+
+Logs also emit a desktop-parsable compact line, for example:
+
+```text
+- #6 samafengtu: checked_in reward=+10 streak=4
+```
+
+Scheduled GitHub Actions runs upload artifact `litmedia-streaks-<run_id>` with the streak registry.
 
 ## Troubleshooting
 

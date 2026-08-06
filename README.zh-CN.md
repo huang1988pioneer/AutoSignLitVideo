@@ -155,6 +155,24 @@ cmd /c npm run checkin:all
 
 執行摘要會寫到 `test-results/checkin-summary.md`。
 
+### 連續簽到天數紀錄
+
+每次簽到成功或已簽過時，會從 LitMedia API 的 `continue_day` 讀取**連續簽到天數**，並寫入：
+
+| 檔案 | 說明 |
+| --- | --- |
+| `test-results/checkin-result-N.json` | 單一帳號結果（含 `streakDays`） |
+| `test-results/streaks.json` | 全部帳號連續天數彙總（本機 `checkin:all` 或 CI summarize） |
+| `test-results/streaks.md` | 同上，Markdown 表格 |
+
+日誌中也會輸出桌面端可解析的格式，例如：
+
+```text
+- #6 samafengtu: checked_in reward=+10 streak=4
+```
+
+GitHub Actions 每次排程結束後會上傳 artifact `litmedia-streaks-<run_id>`（含 `streaks.json` / `streaks.md`）。
+
 ## GitHub Actions 設定
 
 將 storage state 轉成 base64：
@@ -208,11 +226,30 @@ LITMEDIA_BROWSER=chromium
 
 若登入狀態是用 Firefox / Edge 保存的，請設 `LITMEDIA_BROWSER=firefox` 或 `LITMEDIA_BROWSER=edge`。手動執行 workflow 時也可在輸入項選擇 `chromium`、`firefox` 或 `edge`。
 
-工作流程每天在 Asia/Taipei 時區的 `05:05` 與 `17:05` 執行，也可從 GitHub Actions 頁籤手動觸發。會先安裝所選 Playwright 瀏覽器一次，再依序跑帳號 `1` 到 `33`。每個帳號各自啟動瀏覽器、使用自己的 storage state，結束後關閉再處理下一個。沒有對應 Secret 的帳號會跳過。
+### 每日自動執行時段（三個台北時段）
 
-設計上優先保證帳號隔離：雖然仍是循序執行（非大量並行），但 cookies、localStorage、browser context 與瀏覽器行程都按帳號分開。
+GitHub Actions 每天會在下列台北時間（UTC+8）各自執行一次，也可從 Actions 頁籤手動觸發：
 
-已設定帳號之間預設隨機等待 `5` 到 `15` 秒。可用倉庫變數覆蓋：
+| 時段 | 執行方式 |
+| --- | --- |
+| 05:00–06:00 | 整點觸發後，隨機等待 0–59 分鐘再開始 |
+| 13:00–14:00 | 整點觸發後，隨機等待 0–59 分鐘再開始 |
+| 21:00–22:00 | 整點觸發後，隨機等待 0–59 分鐘再開始 |
+
+（cron 為 UTC `0 21 * * *`、`0 5 * * *` 與 `0 13 * * *`。）
+
+### 33 個帳號依序錯開啟動（可重疊並行）
+
+同一次 workflow 會**同時拉起最多 33 個帳號 job**（matrix），但**啟動時間依序錯開**，避免全數同一秒操作：
+
+1. 帳號 1 先開始（延遲 0 秒）
+2. 帳號 2 比帳號 1 **隨機晚 5–15 秒**
+3. 帳號 3 比帳號 2 **隨機晚 5–15 秒**
+4. 依此類推，直到帳號 33
+
+因此若帳號 1 在 `T` 開始，帳號 *n* 約在 `T + Σ(5…15)` 秒後開始；前後帳號可重疊執行（不需等前一個完全跑完），但不會同時點擊。每個 job 使用自己的 storage state 與瀏覽器行程；沒有對應 Secret 的帳號會跳過。GitHub 的排程本身也可能延遲，因此實際開始時間可能略晚於上述時段。
+
+本機 `checkin:all` 仍是**前一個跑完再跑下一個**，並在帳號之間預設隨機等待 `5` 到 `15` 秒（可用環境變數／倉庫變數覆蓋）：
 
 ```text
 LITMEDIA_DELAY_MIN_MS=5000

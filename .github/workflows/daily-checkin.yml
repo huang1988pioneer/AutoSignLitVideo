@@ -2,11 +2,11 @@ name: Daily LitMedia Check-in
 
 on:
   schedule:
-    # GitHub Actions uses UTC.
-    # 21:05 UTC is 05:05 in Asia/Taipei.
-    # 09:05 UTC is 17:05 in Asia/Taipei.
-    - cron: "5 21 * * *"
-    - cron: "5 9 * * *"
+    # GitHub Actions uses UTC. These are 05:00, 13:00, and 21:00 Asia/Taipei.
+    # Each schedule fires on the hour; random_start then waits 0–59 minutes.
+    - cron: "0 21 * * *"
+    - cron: "0 5 * * *"
+    - cron: "0 13 * * *"
   workflow_dispatch:
     inputs:
       browser:
@@ -19,22 +19,44 @@ on:
           - firefox
           - edge
 
+permissions:
+  contents: read
+
 jobs:
-  checkin:
+  random_start:
+    name: Choose a random scheduled start time
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-
+    timeout-minutes: 70
+    outputs:
+      account_delays: ${{ steps.schedule.outputs.account_delays }}
+      browser: ${{ steps.browser.outputs.browser }}
+      install_target: ${{ steps.browser.outputs.install_target }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Wait for a random time within the hour
+        if: github.event_name == 'schedule'
+        shell: bash
+        run: |
+          delay_seconds=$((RANDOM % 3600))
+          echo "Scheduled run will start in $((delay_seconds / 60)) minutes and $((delay_seconds % 60)) seconds."
+          echo "Taipei windows: 05:00–06:00, 13:00–14:00, 21:00–22:00."
+          sleep "$delay_seconds"
 
-      - name: Set up Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      - name: Install dependencies
-        run: npm ci
+      - name: Create staggered account schedule
+        id: schedule
+        shell: bash
+        run: |
+          # Account 1 starts immediately (delay 0).
+          # Account N starts 5–15 seconds after account N-1's scheduled start
+          # (cumulative), so jobs can overlap but do not all click at once.
+          delays=(0)
+          total_delay=0
+          for account in $(seq 2 33); do
+            total_delay=$((total_delay + 5 + RANDOM % 11))
+            delays+=("$total_delay")
+          done
+          IFS=,
+          echo "account_delays=${delays[*]}" >> "$GITHUB_OUTPUT"
+          echo "Staggered start offsets (seconds): ${delays[*]}"
 
       - name: Resolve Playwright browser
         id: browser
@@ -70,56 +92,212 @@ jobs:
           echo "install_target=$INSTALL_TARGET" >> "$GITHUB_OUTPUT"
           echo "Using Playwright browser: $BROWSER (install: $INSTALL_TARGET)"
 
-      - name: Install Playwright browser
-        run: npx playwright install --with-deps ${{ steps.browser.outputs.install_target }}
-
-      - name: Run configured daily check-ins
+  checkin:
+    name: checkin (${{ matrix.account }}) - ${{ matrix.label }}
+    needs: [random_start]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - account: 1
+            label: samafengtu-checkin
+          - account: 2
+            label: fengtusama-checkin
+          - account: 3
+            label: tushenbyfengbro-checkin
+          - account: 4
+            label: fengwithting0831-checkin
+          - account: 5
+            label: fengwithfeng1127-checkin
+          - account: 6
+            label: fengwithtu1127-checkin
+          - account: 7
+            label: akaonda333-checkin
+          - account: 8
+            label: fbussinesseng-checkin
+          - account: 9
+            label: engdictatorf-checkin
+          - account: 10
+            label: fengtuprinfo-checkin
+          - account: 11
+            label: flottojackpoteng-checkin
+          - account: 12
+            label: feng33feng35feng3-checkin
+          - account: 13
+            label: chbondg2-checkin
+          - account: 14
+            label: chbondg_outlook-checkin
+          - account: 15
+            label: gaokaolevel3iptopscorer_outlook-checkin
+          - account: 16
+            label: huang1988pioneer_outlook-checkin
+          - account: 17
+            label: fengtuta_tutamail-checkin
+          - account: 18
+            label: fengfence_mailfence-checkin
+          - account: 19
+            label: goldshoot0720-checkin
+          - account: 20
+            label: abuhg17-checkin
+          - account: 21
+            label: huang1988pioneer-checkin
+          - account: 22
+            label: account-22
+          - account: 23
+            label: account-23
+          - account: 24
+            label: account-24
+          - account: 25
+            label: account-25
+          - account: 26
+            label: account-26
+          - account: 27
+            label: account-27
+          - account: 28
+            label: account-28
+          - account: 29
+            label: account-29
+          - account: 30
+            label: account-30
+          - account: 31
+            label: account-31
+          - account: 32
+            label: account-32
+          - account: 33
+            label: account-33
+    env:
+      LITMEDIA_BROWSER: ${{ needs.random_start.outputs.browser }}
+      LITMEDIA_URL: ${{ vars.LITMEDIA_URL }}
+      LITMEDIA_ACCOUNT_INDEX: ${{ matrix.account }}
+      LITMEDIA_ACCOUNT_LABEL: ${{ matrix.label }} (${{ matrix.account }})
+      LITMEDIA_STORAGE_STATE_BASE64: ${{ secrets[format('LITMEDIA_STORAGE_STATE_BASE64_{0}', matrix.account)] }}
+    steps:
+      - name: Wait for this account's turn
+        shell: bash
         env:
-          LITMEDIA_BROWSER: ${{ steps.browser.outputs.browser }}
-          LITMEDIA_URL: ${{ vars.LITMEDIA_URL }}
-          LITMEDIA_DELAY_MIN_MS: ${{ vars.LITMEDIA_DELAY_MIN_MS }}
-          LITMEDIA_DELAY_MAX_MS: ${{ vars.LITMEDIA_DELAY_MAX_MS }}
-          LITMEDIA_STORAGE_STATE_BASE64_1: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_1 }}
-          LITMEDIA_STORAGE_STATE_BASE64_2: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_2 }}
-          LITMEDIA_STORAGE_STATE_BASE64_3: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_3 }}
-          LITMEDIA_STORAGE_STATE_BASE64_4: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_4 }}
-          LITMEDIA_STORAGE_STATE_BASE64_5: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_5 }}
-          LITMEDIA_STORAGE_STATE_BASE64_6: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_6 }}
-          LITMEDIA_STORAGE_STATE_BASE64_7: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_7 }}
-          LITMEDIA_STORAGE_STATE_BASE64_8: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_8 }}
-          LITMEDIA_STORAGE_STATE_BASE64_9: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_9 }}
-          LITMEDIA_STORAGE_STATE_BASE64_10: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_10 }}
-          LITMEDIA_STORAGE_STATE_BASE64_11: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_11 }}
-          LITMEDIA_STORAGE_STATE_BASE64_12: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_12 }}
-          LITMEDIA_STORAGE_STATE_BASE64_13: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_13 }}
-          LITMEDIA_STORAGE_STATE_BASE64_14: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_14 }}
-          LITMEDIA_STORAGE_STATE_BASE64_15: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_15 }}
-          LITMEDIA_STORAGE_STATE_BASE64_16: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_16 }}
-          LITMEDIA_STORAGE_STATE_BASE64_17: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_17 }}
-          LITMEDIA_STORAGE_STATE_BASE64_18: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_18 }}
-          LITMEDIA_STORAGE_STATE_BASE64_19: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_19 }}
-          LITMEDIA_STORAGE_STATE_BASE64_20: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_20 }}
-          LITMEDIA_STORAGE_STATE_BASE64_21: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_21 }}
-          LITMEDIA_STORAGE_STATE_BASE64_22: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_22 }}
-          LITMEDIA_STORAGE_STATE_BASE64_23: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_23 }}
-          LITMEDIA_STORAGE_STATE_BASE64_24: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_24 }}
-          LITMEDIA_STORAGE_STATE_BASE64_25: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_25 }}
-          LITMEDIA_STORAGE_STATE_BASE64_26: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_26 }}
-          LITMEDIA_STORAGE_STATE_BASE64_27: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_27 }}
-          LITMEDIA_STORAGE_STATE_BASE64_28: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_28 }}
-          LITMEDIA_STORAGE_STATE_BASE64_29: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_29 }}
-          LITMEDIA_STORAGE_STATE_BASE64_30: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_30 }}
-          LITMEDIA_STORAGE_STATE_BASE64_31: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_31 }}
-          LITMEDIA_STORAGE_STATE_BASE64_32: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_32 }}
-          LITMEDIA_STORAGE_STATE_BASE64_33: ${{ secrets.LITMEDIA_STORAGE_STATE_BASE64_33 }}
-        run: npm run checkin:all
+          ACCOUNT_DELAYS: ${{ needs.random_start.outputs.account_delays }}
+        run: |
+          IFS=, read -r -a delays <<< "$ACCOUNT_DELAYS"
+          delay_seconds="${delays[$(( ${{ matrix.account }} - 1 ))]}"
+          echo "Account ${{ matrix.account }} (${{ matrix.label }}) will start after ${delay_seconds} seconds."
+          echo "Rule: each account starts 5–15s after the previous account's scheduled start (account 1 = 0)."
+          sleep "$delay_seconds"
 
-      - name: Upload diagnostic screenshots and summary
+      - name: Skip when secret is not configured
+        id: gate
+        shell: bash
+        run: |
+          if [ -z "${LITMEDIA_STORAGE_STATE_BASE64}" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "Account ${{ matrix.account }}: no LITMEDIA_STORAGE_STATE_BASE64_${{ matrix.account }} — skipped."
+            # Compact line for LitMediaFlow desktop log parsing (no streak when skipped).
+            echo "- #${{ matrix.account }} ${{ matrix.label }}: skipped"
+            mkdir -p test-results
+            node -e '
+              const fs = require("fs");
+              const account = Number(process.env.ACCOUNT);
+              const label = process.env.LABEL || "";
+              const finishedAt = new Date().toISOString();
+              const row = {
+                account,
+                label,
+                status: "skipped",
+                message: `Secret LITMEDIA_STORAGE_STATE_BASE64_${account} is not configured.`,
+                streakDays: null,
+                pointsAwarded: null,
+                creditBalance: null,
+                lastSignDay: null,
+                finishedAt
+              };
+              fs.writeFileSync(`test-results/checkin-result-${account}.json`, JSON.stringify(row, null, 2) + "\n");
+            '
+            {
+              echo "## Account ${{ matrix.account }} — ${{ matrix.label }}"
+              echo ""
+              echo "⏭️ Skipped (secret not configured)."
+              echo ""
+              echo "連續簽到天數：—"
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          ACCOUNT: ${{ matrix.account }}
+          LABEL: ${{ matrix.label }}
+
+      - name: Checkout
+        if: steps.gate.outputs.skip != 'true'
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        if: steps.gate.outputs.skip != 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        if: steps.gate.outputs.skip != 'true'
+        run: npm ci
+
+      - name: Install Playwright browser
+        if: steps.gate.outputs.skip != 'true'
+        run: npx playwright install --with-deps ${{ needs.random_start.outputs.install_target }}
+
+      - name: Run LitMedia check-in
+        if: steps.gate.outputs.skip != 'true'
+        run: npm run checkin
+
+      - name: Upload account result and screenshots
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: litmedia-checkin-report
+          name: litmedia-checkin-${{ matrix.account }}-${{ matrix.label }}-${{ github.run_id }}
           path: |
+            test-results/checkin-result*.json
             test-results/*.png
             test-results/checkin-summary.md
+            test-results/streaks.*
           if-no-files-found: ignore
+          retention-days: 14
+
+  summarize:
+    name: Summarize streaks
+    needs: [checkin]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Download all account artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: collected-results
+          pattern: litmedia-checkin-*
+          merge-multiple: true
+
+      - name: Build streak summary
+        env:
+          LITMEDIA_SUMMARY_DIR: test-results
+        run: node scripts/summarize-checkin-results.mjs collected-results
+
+      - name: Upload streak registry
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: litmedia-streaks-${{ github.run_id }}
+          path: |
+            test-results/streaks.json
+            test-results/streaks.md
+            test-results/checkin-summary.md
+          if-no-files-found: warn
+          retention-days: 30

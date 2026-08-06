@@ -1,6 +1,12 @@
 import { existsSync } from 'node:fs';
 import { appendFile, mkdir, writeFile } from 'node:fs/promises';
 import { launchBrowser, resolveBrowserName } from './browser.mjs';
+import {
+  buildCheckinRecord,
+  formatCompactResultLine,
+  recordCheckinResult,
+  writeStreakRegistry
+} from './checkin-result.mjs';
 import { defaultTargetUrl, runLitMediaCheckin } from './litmedia-checkin.mjs';
 
 const accounts = [
@@ -63,6 +69,8 @@ const failedAccounts = [];
 const successAccounts = [];
 /** @type {Array<object>} */
 const allResults = [];
+/** @type {import('./checkin-result.mjs').CheckinRecord[]} */
+const streakRecords = [];
 
 console.log(
   `Playwright browser: ${browserName} (set LITMEDIA_BROWSER=firefox|edge for fallback)`
@@ -73,6 +81,20 @@ printConfiguredAccounts(configuredAccounts, {
   accountMax,
   skippedAccounts
 });
+
+for (const account of skippedAccounts) {
+  const record = buildCheckinRecord({
+    accountIndex: account.index,
+    accountLabel: account.label,
+    result: {
+      status: 'skipped',
+      message: `No secret / local storage state (${account.secretName}).`
+    }
+  });
+  streakRecords.push(record);
+  // Do not write per-skipped JSON flood for every empty slot unless useful for CI.
+  console.log(formatCompactResultLine(record));
+}
 
 if (configuredAccounts.length === 0) {
   const summary = {
@@ -85,6 +107,7 @@ if (configuredAccounts.length === 0) {
     accountMax
   };
   printSummary(summary);
+  await writeStreakRegistry(streakRecords);
   await writeGithubSummary(summary);
   process.exit(0);
 }
@@ -116,7 +139,15 @@ for (let i = 0; i < configuredAccounts.length; i += 1) {
       console.log(`Continue day streak: ${result.continueDay}`);
     }
 
-    const row = { ...account, result, error: null };
+    const record = buildCheckinRecord({
+      accountIndex: account.index,
+      accountLabel: account.label,
+      result
+    });
+    await recordCheckinResult(record);
+    streakRecords.push(record);
+
+    const row = { ...account, result, error: null, record };
 
     if (result.status === 'checked_in') {
       succeeded += 1;
@@ -136,10 +167,20 @@ for (let i = 0; i < configuredAccounts.length; i += 1) {
   } catch (error) {
     failed += 1;
     const message = error instanceof Error ? error.message : String(error);
+    const record = buildCheckinRecord({
+      accountIndex: account.index,
+      accountLabel: account.label,
+      result: { status: 'failed', message },
+      error: message
+    });
+    await recordCheckinResult(record).catch(() => {});
+    streakRecords.push(record);
+
     const failRow = {
       ...account,
       result: { status: 'failed', message },
-      error: message
+      error: message,
+      record
     };
     failedAccounts.push(failRow);
     allResults.push(failRow);
@@ -167,6 +208,7 @@ const summary = {
 };
 
 printSummary(summary);
+await writeStreakRegistry(streakRecords);
 await writeGithubSummary(summary);
 
 if (failed > 0 && failOnAccountError) {
@@ -285,7 +327,11 @@ function printSummary({ configured, skipped, failed, succeeded = 0, alreadyDone 
     console.log('');
     console.log('OK accounts:');
     for (const account of successAccounts) {
-      console.log(`- #${account.index} ${account.label}: ${formatResultLine(account)}`);
+      console.log(
+        account.record
+          ? formatCompactResultLine(account.record)
+          : `- #${account.index} ${account.label}: ${formatResultLine(account)}`
+      );
     }
   }
 
@@ -293,13 +339,35 @@ function printSummary({ configured, skipped, failed, succeeded = 0, alreadyDone 
     console.log('');
     console.log('Failed accounts:');
     for (const account of failedAccounts) {
-      console.log(`- #${account.index} ${account.label}: ${formatResultLine(account)}`);
+      console.log(
+        account.record
+          ? formatCompactResultLine(account.record)
+          : `- #${account.index} ${account.label}: ${formatResultLine(account)}`
+      );
     }
     console.warn('Failure screenshots were saved under test-results for troubleshooting.');
+  }
+
+  const streakRows = allResults
+    .map((account) => account.record || account.result)
+    .filter((row) => row && (row.streakDays != null || row.continueDay != null));
+  if (streakRows.length > 0) {
+    console.log('');
+    console.log('Streak days (continue_day):');
+    for (const account of [...allResults].sort((a, b) => a.index - b.index)) {
+      const days = account.record?.streakDays ?? account.result?.continueDay;
+      if (days == null) continue;
+      console.log(`- #${account.index} ${account.label}: streak=${days}`);
+    }
   }
 }
 
 function formatResultLine(account) {
+  if (account.record) {
+    // Strip leading "- " so nested summary lists stay readable.
+    return formatCompactResultLine(account.record).replace(/^- #\d+\s+[^:]+:\s*/, '');
+  }
+
   const status = account.result?.status ?? 'unknown';
   const parts = [status];
   if (account.result?.pointsAwarded != null) {
@@ -374,10 +442,28 @@ function buildSummaryMarkdown({
     `| OK total | ${ok} |`,
     `| Failed | ${failed} |`,
     `| Skipped (no secret) | ${skipped} |`,
+    `| Streak reported | ${successAccounts.filter((a) => (a.record?.streakDays ?? a.result?.continueDay) != null).length} |`,
     '',
     `<sub>Accounts ${accountMin}–${accountMax} · ${now}</sub>`,
     ''
   ];
+
+  const streakLines = [...allResults]
+    .filter((a) => (a.record?.streakDays ?? a.result?.continueDay) != null)
+    .sort((a, b) => a.index - b.index);
+  if (streakLines.length > 0) {
+    lines.push('### 連續簽到天數', '');
+    lines.push('| # | Account | Streak |');
+    lines.push('| ---: | --- | ---: |');
+    for (const account of streakLines) {
+      const days = account.record?.streakDays ?? account.result?.continueDay;
+      lines.push(
+        `| ${account.index} | ${escapeMd(shortLabel(account.label))} | **${days}** |`
+      );
+    }
+    lines.push('', '_Also written to `test-results/streaks.json` / `streaks.md`._', '');
+  }
+
 
   if (failedAccounts.length > 0) {
     lines.push('### ⚠️ Needs attention', '');
