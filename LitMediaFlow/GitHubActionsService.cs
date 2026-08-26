@@ -16,14 +16,25 @@ internal sealed class GitHubActionsService
 
     public async Task<RunInfo?> GetLatestAsync(string repository)
     {
+        return (await GetRecentAsync(repository, 1)).FirstOrDefault();
+    }
+
+    public async Task<RunOverview> GetRunOverviewAsync(string repository)
+    {
+        var runs = await GetRecentAsync(repository, 300);
+        return new RunOverview(runs.FirstOrDefault(), SummarizeRuns(runs));
+    }
+
+    public async Task<IReadOnlyList<RunInfo>> GetRecentAsync(string repository, int limit = 300)
+    {
         var output = await RunGhAsync([
-            "run", "list", "--workflow", Workflow, "--repo", repository, "--limit", "1",
+            "run", "list", "--workflow", Workflow, "--repo", repository, "--limit", limit.ToString(),
             "--json", "databaseId,status,conclusion,updatedAt,url"
         ]);
         return JsonSerializer.Deserialize<List<RunInfo>>(output, new JsonSerializerOptions
         {
             PropertyNameCaseInsensitive = true
-        })?.FirstOrDefault();
+        }) ?? [];
     }
 
     public async Task<StreakSummary?> GetStreakSummaryAsync(string repository, long runId)
@@ -64,6 +75,41 @@ internal sealed class GitHubActionsService
         return rows;
     }
 
+    private static RunTimelineSummary SummarizeRuns(IReadOnlyList<RunInfo> runs)
+    {
+        var lastSuccess = runs.FirstOrDefault(IsSuccess);
+        var lastFailure = runs.FirstOrDefault(IsFailure);
+        var consecutiveSuccessDays = ComputeConsecutiveSuccessDays(runs);
+        return new RunTimelineSummary(lastSuccess?.UpdatedAt, lastFailure?.UpdatedAt, consecutiveSuccessDays);
+    }
+
+    private static int ComputeConsecutiveSuccessDays(IReadOnlyList<RunInfo> runs)
+    {
+        var latestRunsByDay = new Dictionary<DateOnly, RunInfo>();
+        foreach (var run in runs)
+        {
+            if (!IsCompleted(run)) continue;
+            var day = DateOnly.FromDateTime(run.UpdatedAt.LocalDateTime);
+            if (!latestRunsByDay.ContainsKey(day)) latestRunsByDay[day] = run;
+        }
+
+        if (latestRunsByDay.Count == 0) return 0;
+
+        var currentDay = latestRunsByDay.Keys.Max();
+        var streak = 0;
+        while (latestRunsByDay.TryGetValue(currentDay, out var run) && IsSuccess(run))
+        {
+            streak++;
+            currentDay = currentDay.AddDays(-1);
+        }
+
+        return streak;
+    }
+
+    private static bool IsCompleted(RunInfo run) => !string.IsNullOrWhiteSpace(run.Conclusion);
+    private static bool IsSuccess(RunInfo run) => string.Equals(run.Conclusion, "success", StringComparison.OrdinalIgnoreCase);
+    private static bool IsFailure(RunInfo run) => string.Equals(run.Conclusion, "failure", StringComparison.OrdinalIgnoreCase);
+
     private static Task<string> GetRunLogAsync(string repository, long runId) =>
         RunGhAsync(["run", "view", runId.ToString(), "--repo", repository, "--log"]);
 
@@ -94,5 +140,7 @@ internal sealed class GitHubActionsService
 }
 
 internal sealed record RunInfo(long DatabaseId, string Status, string? Conclusion, DateTimeOffset UpdatedAt, string Url);
+internal sealed record RunOverview(RunInfo? LatestRun, RunTimelineSummary Timeline);
+internal sealed record RunTimelineSummary(DateTimeOffset? LastSuccessAt, DateTimeOffset? LastFailureAt, int ConsecutiveSuccessDays);
 internal sealed record StreakSummary(int TotalDays, int AccountCount);
 internal sealed record AccountRunResult(int AccountNumber, string Label, string Status, int? StreakDays);

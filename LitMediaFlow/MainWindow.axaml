@@ -17,6 +17,7 @@
     <Style Selector="Button.secondary"><Setter Property="Background" Value="#E7EFEF"/><Setter Property="Foreground" Value="#183941"/><Setter Property="Padding" Value="15,10"/><Setter Property="CornerRadius" Value="7"/></Style>
     <Style Selector="Button.secondary:pointerover"><Setter Property="Background" Value="#D5E5E4"/></Style>
     <Style Selector="TextBlock.metric-value"><Setter Property="FontSize" Value="26"/><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="Foreground" Value="#087F78"/></Style>
+    <Style Selector="TextBlock.metric-value-compact"><Setter Property="FontSize" Value="19"/><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="Foreground" Value="#087F78"/></Style>
     <Style Selector="TextBlock.account-row"><Setter Property="FontSize" Value="14"/><Setter Property="Foreground" Value="#1C3540"/></Style>
   </Window.Styles>
 
@@ -68,6 +69,20 @@
                 <StackPanel Grid.Column="1" Spacing="3"><TextBlock Text="回報連續天數帳號" Classes="subtle" FontSize="12"/><TextBlock x:Name="StreakTotalText" Text="—" Classes="metric-value"/></StackPanel>
                 <StackPanel Grid.Column="2" Spacing="3"><TextBlock Text="最近執行" Classes="subtle" FontSize="12"/><TextBlock x:Name="CheckinStatusText" Text="尚未更新" Classes="metric-value" FontSize="19"/></StackPanel>
               </Grid>
+              <Grid ColumnDefinitions="*,*,*" ColumnSpacing="24">
+                <StackPanel Spacing="3"><TextBlock Text="上次成功" Classes="subtle" FontSize="12"/><TextBlock x:Name="LastSuccessText" Text="—" Classes="metric-value-compact"/></StackPanel>
+                <StackPanel Grid.Column="1" Spacing="3"><TextBlock Text="上次失敗" Classes="subtle" FontSize="12"/><TextBlock x:Name="LastFailureText" Text="—" Classes="metric-value-compact"/></StackPanel>
+                <StackPanel Grid.Column="2" Spacing="3"><TextBlock Text="連續成功天數" Classes="subtle" FontSize="12"/><TextBlock x:Name="ConsecutiveSuccessDaysText" Text="—" Classes="metric-value-compact"/></StackPanel>
+              </Grid>
+              <Border Background="#EEF4F4" CornerRadius="8" Padding="13,10">
+                <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
+                  <StackPanel Spacing="3">
+                    <TextBlock Text="程式碼行數" Classes="subtle" FontSize="12"/>
+                    <TextBlock x:Name="CodeLineCountText" Text="—" Classes="metric-value-compact"/>
+                  </StackPanel>
+                  <TextBlock Grid.Column="1" VerticalAlignment="Center" Foreground="#34535A" Text="只計算來源檔的非空行，不含 bin / obj。" TextWrapping="Wrap"/>
+                </Grid>
+              </Border>
               <Border Background="#EEF4F4" CornerRadius="8" Padding="13,10">
                 <TextBlock x:Name="DashboardStatusText" Text="正在讀取本機帳號登入狀態。" Foreground="#34535A" TextWrapping="Wrap"/>
               </Border>

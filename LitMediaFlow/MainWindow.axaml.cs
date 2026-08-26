@@ -47,7 +47,12 @@ public partial class MainWindow : Window
         var ready = Enumerable.Range(1, AccountCount).Where(HasStateForAccount).ToList();
         var configured = _aliases.Count(pair => !string.IsNullOrWhiteSpace(pair.Value));
         ConfiguredAccountsText.Text = $"{configured} 個";
+        RefreshCodeLineCount();
         StreakTotalText.Text = "—";
+        LastSuccessText.Text = "—";
+        LastFailureText.Text = "—";
+        ConsecutiveSuccessDaysText.Text = "—";
+        CheckinStatusText.Text = "尚未更新";
         DashboardStatusText.Text = ready.Count == 0
             ? "尚未偵測到已儲存的登入狀態。請從「建立登入狀態」開始。"
             : $"已偵測到 {ready.Count} 個可用登入狀態。GitHub Actions 的執行紀錄可由左側指引開啟。";
@@ -145,9 +150,12 @@ public partial class MainWindow : Window
     {
         await WithDashboardBusy(async () =>
         {
-            DashboardStatusText.Text = "正在讀取 GitHub Actions 的最新執行結果。";
+            DashboardStatusText.Text = "正在讀取 GitHub Actions 的最新執行結果與歷史摘要。";
+            RefreshCodeLineCount();
             var repository = await _github.GetRepositoryAsync();
-            var run = await _github.GetLatestAsync(repository);
+            var overview = await _github.GetRunOverviewAsync(repository);
+            ApplyRunTimeline(overview.Timeline);
+            var run = overview.LatestRun;
             if (run is null)
             {
                 CheckinStatusText.Text = "尚無紀錄";
@@ -156,7 +164,7 @@ public partial class MainWindow : Window
                 return;
             }
 
-            CheckinStatusText.Text = string.IsNullOrWhiteSpace(run.Conclusion) ? run.Status : run.Conclusion;
+            CheckinStatusText.Text = FormatRunConclusion(run);
             var accountResults = await _github.GetAccountResultsAsync(repository, run.DatabaseId);
             var summary = await _github.GetStreakSummaryAsync(repository, run.DatabaseId);
             StreakTotalText.Text = summary is null ? "—" : $"{summary.AccountCount} / {accountResults.Count} 個";
@@ -193,6 +201,103 @@ public partial class MainWindow : Window
         };
         return result.StreakDays is { } days ? $"{state}，連續 {days} 天" : state;
     }
+
+    private void ApplyRunTimeline(RunTimelineSummary timeline)
+    {
+        LastSuccessText.Text = FormatRunTime(timeline.LastSuccessAt);
+        LastFailureText.Text = FormatRunTime(timeline.LastFailureAt);
+        ConsecutiveSuccessDaysText.Text =
+            timeline.LastSuccessAt is null && timeline.LastFailureAt is null && timeline.ConsecutiveSuccessDays == 0
+                ? "—"
+                : $"{timeline.ConsecutiveSuccessDays} 天";
+    }
+
+    private static string FormatRunConclusion(RunInfo run) => run.Conclusion?.ToLowerInvariant() switch
+    {
+        "success" => "成功",
+        "failure" => "失敗",
+        "cancelled" => "已取消",
+        "timed_out" => "逾時",
+        "skipped" => "已略過",
+        "neutral" => "中立",
+        "action_required" => "需處理",
+        null => RunStatusLabel(run.Status),
+        _ => RunStatusLabel(run.Conclusion)
+    };
+
+    private static string FormatRunTime(DateTimeOffset? value) =>
+        value is { } timestamp ? timestamp.ToLocalTime().ToString("yyyy/MM/dd HH:mm") : "—";
+
+    private static string RunStatusLabel(string? value) => value?.ToLowerInvariant() switch
+    {
+        "queued" => "排隊中",
+        "in_progress" => "執行中",
+        "completed" => "已完成",
+        null or "" => "—",
+        _ => value
+    };
+
+    private void RefreshCodeLineCount() => CodeLineCountText.Text = $"{CountCodeLines():N0} 行";
+
+    private int CountCodeLines()
+    {
+        var total = 0;
+        foreach (var file in EnumerateSourceFiles(_workspace))
+        {
+            try
+            {
+                total += File.ReadLines(file).Count(line => !string.IsNullOrWhiteSpace(line));
+            }
+            catch (IOException)
+            {
+                // A locked or partially written source file should not hide the other files' count.
+            }
+            catch (UnauthorizedAccessException)
+            {
+                // A protected source file should not hide the other files' count.
+            }
+        }
+
+        return total;
+    }
+
+    private static bool IsCountedSourceFile(string path) => Path.GetExtension(path).ToLowerInvariant() is ".cs" or ".xaml" or ".axaml" or ".js" or ".mjs";
+
+    private static IEnumerable<string> EnumerateSourceFiles(string root)
+    {
+        var pending = new Stack<string>();
+        pending.Push(root);
+        while (pending.Count > 0)
+        {
+            var directory = pending.Pop();
+            string[] files;
+            try { files = Directory.GetFiles(directory); }
+            catch (IOException) { continue; }
+            catch (UnauthorizedAccessException) { continue; }
+
+            foreach (var file in files)
+                if (IsCountedSourceFile(file)) yield return file;
+
+            string[] children;
+            try { children = Directory.GetDirectories(directory); }
+            catch (IOException) { continue; }
+            catch (UnauthorizedAccessException) { continue; }
+
+            foreach (var child in children)
+            {
+                if (IsIgnoredDirectory(child)) continue;
+                try
+                {
+                    if ((File.GetAttributes(child) & FileAttributes.ReparsePoint) != 0) continue;
+                }
+                catch (IOException) { continue; }
+                catch (UnauthorizedAccessException) { continue; }
+                pending.Push(child);
+            }
+        }
+    }
+
+    private static bool IsIgnoredDirectory(string path) => Path.GetFileName(path).ToLowerInvariant() is "bin" or "obj" or ".git" or ".agents" or "node_modules";
 
     private async void CopyStateButton_OnClick(object? sender, RoutedEventArgs e)
     {
