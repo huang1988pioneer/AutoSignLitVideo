@@ -6,10 +6,28 @@ namespace LitMediaFlow;
 
 internal sealed class GitHubActionsService
 {
+    // The desktop companion can be launched from its published output folder,
+    // which is not necessarily inside a Git checkout. Keep the repository
+    // explicit so GitHub CLI does not have to discover it through `git`.
+    public const string DefaultRepository = "huang1988pioneer/AutoSignLitVideo";
     private const string Workflow = "daily-checkin.yml";
+    private readonly string _workingDirectory;
 
-    public async Task<string> GetRepositoryAsync() =>
-        (await RunGhAsync(["repo", "view", "--json", "nameWithOwner", "--jq", ".nameWithOwner"])).Trim();
+    public GitHubActionsService(string workingDirectory) => _workingDirectory = workingDirectory;
+
+    public async Task<string> GetRepositoryAsync()
+    {
+        // LITMEDIA_GITHUB_REPOSITORY lets users run the companion against a
+        // fork without requiring the app itself to be launched from that fork.
+        var configuredRepository = Environment.GetEnvironmentVariable("LITMEDIA_GITHUB_REPOSITORY");
+        var repository = string.IsNullOrWhiteSpace(configuredRepository)
+            ? DefaultRepository
+            : configuredRepository.Trim();
+
+        return (await RunGhAsync([
+            "repo", "view", repository, "--json", "nameWithOwner", "--jq", ".nameWithOwner"
+        ])).Trim();
+    }
 
     public async Task TriggerAsync(string repository) =>
         await RunGhAsync(["workflow", "run", Workflow, "--repo", repository, "--ref", "main"]);
@@ -110,16 +128,17 @@ internal sealed class GitHubActionsService
     private static bool IsSuccess(RunInfo run) => string.Equals(run.Conclusion, "success", StringComparison.OrdinalIgnoreCase);
     private static bool IsFailure(RunInfo run) => string.Equals(run.Conclusion, "failure", StringComparison.OrdinalIgnoreCase);
 
-    private static Task<string> GetRunLogAsync(string repository, long runId) =>
+    private Task<string> GetRunLogAsync(string repository, long runId) =>
         RunGhAsync(["run", "view", runId.ToString(), "--repo", repository, "--log"]);
 
-    private static async Task<string> RunGhAsync(IEnumerable<string> arguments)
+    private async Task<string> RunGhAsync(IEnumerable<string> arguments)
     {
         using var process = new Process
         {
             StartInfo = new ProcessStartInfo
             {
                 FileName = "gh",
+                WorkingDirectory = _workingDirectory,
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,

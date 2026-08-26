@@ -15,14 +15,16 @@ public partial class MainWindow : Window
         "Edge（備案）"
     ];
     private readonly string _workspace = FindWorkspace();
-    private readonly GitHubActionsService _github = new();
+    private readonly GitHubActionsService _github;
     private readonly Dictionary<int, string> _aliases = LoadAliases();
     private readonly Dictionary<int, TextBox> _aliasInputs = new();
     private string _browser = LoadBrowserPreference();
+    private bool _remoteDashboardLoaded;
 
     public MainWindow()
     {
         InitializeComponent();
+        _github = new GitHubActionsService(_workspace);
         AccountComboBox.ItemsSource = Enumerable.Range(1, AccountCount).Select(number => $"帳號 {number:00}").ToArray();
         AccountComboBox.SelectionChanged += (_, _) => RefreshAccountState();
         BrowserComboBox.ItemsSource = BrowserOptions;
@@ -32,6 +34,7 @@ public partial class MainWindow : Window
         RefreshAccountState();
         RefreshBrowserHint();
         RefreshDashboard();
+        Opened += MainWindow_OnOpened;
     }
 
     private int AccountNumber => AccountComboBox.SelectedIndex + 1;
@@ -48,14 +51,17 @@ public partial class MainWindow : Window
         var configured = _aliases.Count(pair => !string.IsNullOrWhiteSpace(pair.Value));
         ConfiguredAccountsText.Text = $"{configured} 個";
         RefreshCodeLineCount();
-        StreakTotalText.Text = "—";
-        LastSuccessText.Text = "—";
-        LastFailureText.Text = "—";
-        ConsecutiveSuccessDaysText.Text = "—";
-        CheckinStatusText.Text = "尚未更新";
-        DashboardStatusText.Text = ready.Count == 0
-            ? "尚未偵測到已儲存的登入狀態。請從「建立登入狀態」開始。"
-            : $"已偵測到 {ready.Count} 個可用登入狀態。GitHub Actions 的執行紀錄可由左側指引開啟。";
+        if (!_remoteDashboardLoaded)
+        {
+            StreakTotalText.Text = "—";
+            LastSuccessText.Text = "—";
+            LastFailureText.Text = "—";
+            ConsecutiveSuccessDaysText.Text = "—";
+            CheckinStatusText.Text = "尚未更新";
+            DashboardStatusText.Text = ready.Count == 0
+                ? "尚未偵測到已儲存的登入狀態。請從「建立登入狀態」開始。"
+                : $"已偵測到 {ready.Count} 個可用登入狀態。GitHub Actions 的執行紀錄可由左側指引開啟。";
+        }
 
         RenderDashboardAccounts(Enumerable.Range(1, AccountCount).Select(number =>
         {
@@ -146,7 +152,17 @@ public partial class MainWindow : Window
         });
     }
 
+    private async void MainWindow_OnOpened(object? sender, EventArgs e)
+    {
+        await RefreshRemoteDashboardAsync();
+    }
+
     private async void RefreshDashboardButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        await RefreshRemoteDashboardAsync();
+    }
+
+    private async Task RefreshRemoteDashboardAsync()
     {
         await WithDashboardBusy(async () =>
         {
@@ -155,12 +171,14 @@ public partial class MainWindow : Window
             var repository = await _github.GetRepositoryAsync();
             var overview = await _github.GetRunOverviewAsync(repository);
             ApplyRunTimeline(overview.Timeline);
+            _remoteDashboardLoaded = true;
             var run = overview.LatestRun;
             if (run is null)
             {
                 CheckinStatusText.Text = "尚無紀錄";
                 StreakTotalText.Text = "—";
                 DashboardStatusText.Text = "尚未找到 Daily LitMedia Check-in 的執行紀錄。";
+                _remoteDashboardLoaded = true;
                 return;
             }
 
@@ -357,7 +375,7 @@ public partial class MainWindow : Window
 
     private void OpenActionsButton_OnClick(object? sender, RoutedEventArgs e)
     {
-        Process.Start(new ProcessStartInfo("https://github.com/huang1988pioneer/AutoSignLitVideo/actions") { UseShellExecute = true });
+        Process.Start(new ProcessStartInfo($"https://github.com/{GitHubActionsService.DefaultRepository}/actions") { UseShellExecute = true });
         StatusText.Text = "已開啟 GitHub Actions。";
     }
 

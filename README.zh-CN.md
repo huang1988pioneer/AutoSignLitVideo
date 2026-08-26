@@ -175,6 +175,11 @@ GitHub Actions 每次排程結束後會上傳 artifact `litmedia-streaks-<run_id
 
 ## GitHub Actions 設定
 
+`LitMediaFlow` 可以從發布後的輸出目錄啟動，因此目前工作目錄不必是 Git
+repository。預設使用 `huang1988pioneer/AutoSignLitVideo`；若要使用 fork，
+請在啟動桌面程式前設定 `LITMEDIA_GITHUB_REPOSITORY` 為
+`owner/repository`。
+
 將 storage state 轉成 base64：
 
 ```powershell

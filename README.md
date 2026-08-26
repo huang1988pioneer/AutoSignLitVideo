@@ -157,6 +157,12 @@ A run summary is written to `test-results/checkin-summary.md`.
 
 ## GitHub Actions setup
 
+`LitMediaFlow` can be launched from its published output directory, so it does
+not require the current working directory to be a Git checkout. It uses
+`huang1988pioneer/AutoSignLitVideo` by default. To use a fork, set
+`LITMEDIA_GITHUB_REPOSITORY` to an `owner/repository` value before launching the
+desktop app.
+
 Convert the storage state file to base64:
 
 ```powershell
