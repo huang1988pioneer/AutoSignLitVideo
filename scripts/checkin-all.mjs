@@ -376,6 +376,9 @@ function formatResultLine(account) {
   if (account.result?.continueDay != null) {
     parts.push(`streak=${account.result.continueDay}`);
   }
+  if (account.result?.creditBalance != null) {
+    parts.push(`points=${account.result.creditBalance}`);
+  }
   if (account.error) {
     parts.push(`error=${compactMessage(account.error)}`);
   }
@@ -479,8 +482,8 @@ function buildSummaryMarkdown({
 
   if (allResults.length > 0) {
     lines.push('### Account results', '');
-    lines.push('| # | Account | Status | Reward | Streak | Note |');
-    lines.push('| ---: | --- | --- | ---: | ---: | --- |');
+    lines.push('| # | Account | Status | Reward | Streak | Points | Note |');
+    lines.push('| ---: | --- | --- | ---: | ---: | ---: | --- |');
 
     const sorted = [...allResults].sort((a, b) => a.index - b.index);
     for (const account of sorted) {
@@ -488,13 +491,15 @@ function buildSummaryMarkdown({
       const reward =
         account.result?.pointsAwarded != null ? `+${account.result.pointsAwarded}` : '—';
       const streak = account.result?.continueDay != null ? String(account.result.continueDay) : '—';
+      const points =
+        account.result?.creditBalance != null ? String(account.result.creditBalance) : '—';
       let note = '—';
       if (status === 'checked_in') note = 'new today';
       else if (status === 'already_done') note = 'claimed earlier';
       else if (account.error) note = compactMessage(account.error, 80);
 
       lines.push(
-        `| ${account.index} | ${escapeMd(shortLabel(account.label))} | ${statusBadge(status)} | ${reward} | ${streak} | ${escapeMd(note)} |`
+        `| ${account.index} | ${escapeMd(shortLabel(account.label))} | ${statusBadge(status)} | ${reward} | ${streak} | ${points} | ${escapeMd(note)} |`
       );
     }
     lines.push('');

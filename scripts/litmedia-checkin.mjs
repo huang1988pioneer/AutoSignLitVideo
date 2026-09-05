@@ -80,7 +80,7 @@ export async function runLitMediaCheckin(browser, options = {}) {
 
     await mkdir('.auth', { recursive: true });
     await context.storageState({ path: `.auth/latest${accountSuffix}.storageState.json` });
-    return result;
+    return await attachUserPoints(result, page, apiTracker);
   } catch (error) {
     await mkdir('test-results', { recursive: true });
     await page
@@ -125,19 +125,21 @@ async function resolveStorageState({ accountIndex, storageStateBase64, storageSt
  * without reverse-engineering request signatures.
  */
 function attachApiTracker(page) {
-  /** @type {{ signList: any | null, checkin: any | null, userInfo: any | null, login: any | null }} */
+  /** @type {{ signList: any | null, checkin: any | null, userInfo: any | null, login: any | null, credit: any | null }} */
   const state = {
     signList: null,
     checkin: null,
     userInfo: null,
-    login: null
+    login: null,
+    credit: null
   };
 
   const waiters = {
     signList: new Set(),
     checkin: new Set(),
     userInfo: new Set(),
-    login: new Set()
+    login: new Set(),
+    credit: new Set()
   };
 
   page.on('response', async (response) => {
@@ -147,6 +149,7 @@ function attachApiTracker(page) {
     else if (url.includes('/lit-video/web-checkin')) key = 'checkin';
     else if (url.includes('/lit-video/get-user-info')) key = 'userInfo';
     else if (url.includes('/account/check-login')) key = 'login';
+    else if (url.includes('/user/credit/detail') || url.includes('/credit/detail')) key = 'credit';
     if (!key) return;
 
     try {
@@ -712,34 +715,130 @@ function formatCheckedInMessage({ points, creditBefore, creditAfter, source }) {
   return parts.join(' ');
 }
 
-async function readCreditBalance(page, apiTracker) {
-  const userInfo = apiTracker.get('userInfo')?.json?.data;
-  if (userInfo) {
-    const free = Number(userInfo.free_times);
-    const vip = Number(userInfo.vip_times);
-    if (Number.isFinite(free) || Number.isFinite(vip)) {
-      return (Number.isFinite(free) ? free : 0) + (Number.isFinite(vip) ? vip : 0);
-    }
-    if (Number.isFinite(Number(userInfo.total_times))) {
-      // total_times is lifetime pool; prefer free+vip for the header badge.
-    }
+async function attachUserPoints(result, page, apiTracker) {
+  if (!result || result.status === 'missing' || result.status === 'login_required') {
+    return result;
+  }
+  if (result.creditBalance != null) {
+    console.log(`User points: ${result.creditBalance}`);
+    return result;
   }
 
-  // Header badge near gift icon: a short numeric label (e.g. "44").
-  try {
-    const gift = giftIconLocator(page).first();
-    if (await gift.isVisible().catch(() => false)) {
-      const nearby = gift.locator(
-        'xpath=ancestor::*[self::button or self::div][1]/following-sibling::*[1]//*[normalize-space(text())!=""]'
-      );
-      const text = ((await nearby.first().innerText({ timeout: 1_000 }).catch(() => '')) || '').trim();
-      if (/^\d+$/.test(text)) return Number(text);
+  const creditBalance = await readCreditBalance(page, apiTracker);
+  if (creditBalance == null) return result;
+  console.log(`User points: ${creditBalance}`);
+  return { ...result, creditBalance };
+}
+
+/**
+ * Remaining user points shown in the LitMedia header (e.g. 2291), not the
+ * daily check-in reward tier (`points_num` / `pointsAwarded`).
+ * @param {unknown} data
+ * @returns {number | null}
+ */
+export function interpretUserPoints(data) {
+  if (data == null) return null;
+  if (typeof data === 'number') {
+    return Number.isFinite(data) && data >= 0 ? data : null;
+  }
+  if (typeof data !== 'object' || Array.isArray(data)) return null;
+
+  const directKeys = [
+    'credit',
+    'credits',
+    'remain_credit',
+    'remaining_credit',
+    'remain_credits',
+    'user_credit',
+    'credit_balance',
+    'credit_num',
+    'balance'
+  ];
+  for (const key of directKeys) {
+    const n = toNonNegativeNumber(data[key]);
+    if (n != null) return n;
+  }
+
+  const free = toNonNegativeNumber(data.free_times);
+  const vip = toNonNegativeNumber(data.vip_times);
+  if (free != null || vip != null) {
+    return (free ?? 0) + (vip ?? 0);
+  }
+
+  for (const key of ['points', 'point']) {
+    const n = toNonNegativeNumber(data[key]);
+    if (n != null) return n;
+  }
+
+  for (const nestedKey of ['credit_detail', 'credit', 'wallet']) {
+    const nested = data[nestedKey];
+    if (nested && typeof nested === 'object' && !Array.isArray(nested)) {
+      const n = interpretUserPoints(nested);
+      if (n != null) return n;
     }
-  } catch {
-    // ignore
   }
 
   return null;
+}
+
+function toNonNegativeNumber(value) {
+  if (value == null || value === '') return null;
+  if (typeof value === 'object') return null;
+  const n = Number(String(value).replace(/[,，]/g, ''));
+  return Number.isFinite(n) && n >= 0 ? n : null;
+}
+
+async function readCreditBalance(page, apiTracker) {
+  if (!apiTracker.get('userInfo')) {
+    await apiTracker.waitFor('userInfo', 8_000).catch(() => null);
+  }
+
+  const userInfo = apiTracker.get('userInfo')?.json;
+  const fromUserInfo = interpretUserPoints(userInfo?.data) ?? interpretUserPoints(userInfo);
+  if (fromUserInfo != null) return fromUserInfo;
+
+  const credit = apiTracker.get('credit')?.json;
+  const fromCredit = interpretUserPoints(credit?.data) ?? interpretUserPoints(credit);
+  if (fromCredit != null) return fromCredit;
+
+  return readCreditBalanceFromPage(page);
+}
+
+async function readCreditBalanceFromPage(page) {
+  try {
+    const n = await page.evaluate(() => {
+      const gift = document.querySelector(
+        'img[alt="Gift credit"], img[alt*="Gift"], img[src*="gift-credit"], img[src*="gift"]'
+      );
+      if (!gift) return null;
+
+      const roots = [];
+      let el = gift;
+      for (let i = 0; i < 5 && el; i += 1) {
+        roots.push(el);
+        el = el.parentElement;
+      }
+
+      const nums = [];
+      for (const root of roots) {
+        const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+        let node;
+        while ((node = walker.nextNode())) {
+          const t = String(node.textContent || '')
+            .replace(/[,，\s]/g, '')
+            .trim();
+          const match = t.match(/^(\d{2,7})點?$/);
+          if (match) nums.push(Number(match[1]));
+        }
+      }
+      if (!nums.length) return null;
+      const candidates = nums.filter((value) => value >= 10);
+      return candidates.length ? Math.max(...candidates) : Math.max(...nums);
+    });
+    return Number.isFinite(n) ? n : null;
+  } catch {
+    return null;
+  }
 }
 
 async function checkDailyCheckinAcrossPages(page, urls, apiTracker) {
@@ -766,6 +865,10 @@ async function checkDailyCheckinAcrossPages(page, urls, apiTracker) {
         continue;
       }
       break;
+    }
+
+    if (!apiTracker.get('userInfo')) {
+      await apiTracker.waitFor('userInfo', 8_000).catch(() => null);
     }
 
     const panelOpened = await openRewardPanelIfNeeded(page, apiTracker);

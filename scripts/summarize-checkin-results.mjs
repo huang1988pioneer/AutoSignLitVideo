@@ -139,6 +139,8 @@ function buildDailySummaryMarkdown(payload) {
     `| Skipped | ${skipped.length} |`,
     `| Streak reported | ${payload.streakReportedCount} |`,
     `| Streak days total | ${payload.totalStreakDays} |`,
+    `| Points reported | ${payload.pointsReportedCount ?? 0} |`,
+    `| Remaining points total | ${payload.totalPoints ?? 0} |`,
     '',
     `<sub>${payload.generatedAt}</sub>`,
     ''

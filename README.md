@@ -257,8 +257,10 @@ Each successful or already-done check-in records LitMedia’s `continue_day` as 
 Logs also emit a desktop-parsable compact line, for example:
 
 ```text
-- #6 samafengtu: checked_in reward=+10 streak=4
+- #6 samafengtu: checked_in reward=+10 streak=4 points=2291
 ```
+
+`reward=` is the daily check-in tier. `points=` is the remaining user-point balance shown in the LitMedia header.
 
 Scheduled GitHub Actions runs upload artifact `litmedia-streaks-<run_id>` with the streak registry.
 

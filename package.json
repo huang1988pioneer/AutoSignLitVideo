@@ -15,7 +15,7 @@
     "browsers:chromium": "playwright install chromium",
     "browsers:firefox": "playwright install firefox",
     "browsers:edge": "playwright install msedge",
-    "check": "node --check scripts/browser.mjs && node --check scripts/save-auth.mjs && node --check scripts/checkin.mjs && node --check scripts/checkin-all.mjs && node --check scripts/checkin-result.mjs && node --check scripts/summarize-checkin-results.mjs && node --check scripts/export-secret.mjs && node --check scripts/litmedia-checkin.mjs"
+    "check": "node --check scripts/browser.mjs && node --check scripts/save-auth.mjs && node --check scripts/checkin.mjs && node --check scripts/checkin-all.mjs && node --check scripts/checkin-result.mjs && node --check scripts/summarize-checkin-results.mjs && node --check scripts/export-secret.mjs && node --check scripts/litmedia-checkin.mjs && node scripts/checkin-result.test.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.54.0",

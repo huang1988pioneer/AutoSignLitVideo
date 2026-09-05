@@ -54,6 +54,7 @@ public partial class MainWindow : Window
         if (!_remoteDashboardLoaded)
         {
             StreakTotalText.Text = "—";
+            PointsTotalText.Text = "—";
             LastSuccessText.Text = "—";
             LastFailureText.Text = "—";
             ConsecutiveSuccessDaysText.Text = "—";
@@ -74,19 +75,45 @@ public partial class MainWindow : Window
     private void RenderDashboardAccounts(IEnumerable<DashboardAccount> accounts)
     {
         DashboardAccountsPanel.Children.Clear();
+        DashboardAccountsPanel.Children.Add(BuildAccountHeader());
         foreach (var account in accounts)
         {
-            var row = new Grid { ColumnDefinitions = new ColumnDefinitions("76,190,*") };
+            var row = new Grid { ColumnDefinitions = new ColumnDefinitions("76,150,88,*") };
             var numberText = new TextBlock { Text = $"帳號 {account.Number:00}", Classes = { "account-row" } };
             var aliasText = new TextBlock { Text = account.Label, Classes = { "account-row" } };
+            var pointsText = new TextBlock
+            {
+                Text = account.Points is { } points ? $"{points:N0}" : "—",
+                Classes = { "account-row" },
+                FontWeight = Avalonia.Media.FontWeight.SemiBold
+            };
             var stateText = new TextBlock { Text = account.State, Classes = { "account-row" }, Foreground = account.IsHealthy ? Avalonia.Media.Brushes.Teal : Avalonia.Media.Brushes.DimGray };
             Grid.SetColumn(aliasText, 1);
-            Grid.SetColumn(stateText, 2);
+            Grid.SetColumn(pointsText, 2);
+            Grid.SetColumn(stateText, 3);
             row.Children.Add(numberText);
             row.Children.Add(aliasText);
+            row.Children.Add(pointsText);
             row.Children.Add(stateText);
             DashboardAccountsPanel.Children.Add(row);
         }
+    }
+
+    private static Grid BuildAccountHeader()
+    {
+        var row = new Grid { ColumnDefinitions = new ColumnDefinitions("76,150,88,*"), Margin = new Avalonia.Thickness(0, 0, 0, 4) };
+        var numberText = new TextBlock { Text = "帳號", FontSize = 12, Foreground = Avalonia.Media.Brushes.DimGray };
+        var aliasText = new TextBlock { Text = "別名", FontSize = 12, Foreground = Avalonia.Media.Brushes.DimGray };
+        var pointsText = new TextBlock { Text = "點數", FontSize = 12, Foreground = Avalonia.Media.Brushes.DimGray };
+        var stateText = new TextBlock { Text = "狀態", FontSize = 12, Foreground = Avalonia.Media.Brushes.DimGray };
+        Grid.SetColumn(aliasText, 1);
+        Grid.SetColumn(pointsText, 2);
+        Grid.SetColumn(stateText, 3);
+        row.Children.Add(numberText);
+        row.Children.Add(aliasText);
+        row.Children.Add(pointsText);
+        row.Children.Add(stateText);
+        return row;
     }
 
     private bool HasStateForAccount(int number) => File.Exists(Path.Combine(_workspace, "auth", $"account-{number}.storageState.json")) || number == 1 && File.Exists(LegacyStateFile);
@@ -177,6 +204,7 @@ public partial class MainWindow : Window
             {
                 CheckinStatusText.Text = "尚無紀錄";
                 StreakTotalText.Text = "—";
+                PointsTotalText.Text = "—";
                 DashboardStatusText.Text = "尚未找到 Daily LitMedia Check-in 的執行紀錄。";
                 _remoteDashboardLoaded = true;
                 return;
@@ -186,6 +214,8 @@ public partial class MainWindow : Window
             var accountResults = await _github.GetAccountResultsAsync(repository, run.DatabaseId);
             var summary = await _github.GetStreakSummaryAsync(repository, run.DatabaseId);
             StreakTotalText.Text = summary is null ? "—" : $"{summary.AccountCount} / {accountResults.Count} 個";
+            var pointValues = accountResults.Where(result => result.Points is not null).Select(result => result.Points!.Value).ToArray();
+            PointsTotalText.Text = pointValues.Length == 0 ? "—" : $"{pointValues.Sum():N0}";
             if (accountResults.Count > 0)
             {
                 ConfiguredAccountsText.Text = $"{accountResults.Count} 個";
@@ -193,11 +223,14 @@ public partial class MainWindow : Window
                     result.AccountNumber,
                     result.Label,
                     FormatRemoteAccountState(result),
-                    result.Status is "checked_in" or "already_done")));
+                    result.Status is "checked_in" or "already_done",
+                    result.Points)));
             }
             DashboardStatusText.Text = summary is null
                 ? $"最近執行：{run.Url}。此執行沒有可讀取的連續簽到資料。"
-                : $"最近執行：{run.Url}；{summary.AccountCount} 個帳號回報連續天數，請於下方帳號清單分別查看。";
+                : pointValues.Length == 0
+                    ? $"最近執行：{run.Url}；{summary.AccountCount} 個帳號回報連續天數，請於下方帳號清單分別查看。"
+                    : $"最近執行：{run.Url}；{summary.AccountCount} 個帳號回報連續天數，剩餘點數合計 {pointValues.Sum():N0}。";
         });
     }
 
@@ -465,4 +498,4 @@ public partial class MainWindow : Window
     }
 }
 
-internal sealed record DashboardAccount(int Number, string Label, string State, bool IsHealthy);
+internal sealed record DashboardAccount(int Number, string Label, string State, bool IsHealthy, int? Points = null);

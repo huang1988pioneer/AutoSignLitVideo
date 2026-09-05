@@ -64,10 +64,11 @@
                 <Button x:Name="RunCheckinButton" Classes="primary" Click="RunCheckinButton_OnClick">手動觸發每日簽到</Button>
                 <Button x:Name="RefreshDashboardButton" Classes="secondary" Click="RefreshDashboardButton_OnClick">更新執行結果</Button>
               </StackPanel>
-              <Grid ColumnDefinitions="*,*,*" ColumnSpacing="24">
+              <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="18">
                 <StackPanel Spacing="3"><TextBlock Text="已設定帳號" Classes="subtle" FontSize="12"/><TextBlock x:Name="ConfiguredAccountsText" Text="0 個" Classes="metric-value"/></StackPanel>
                 <StackPanel Grid.Column="1" Spacing="3"><TextBlock Text="回報連續天數帳號" Classes="subtle" FontSize="12"/><TextBlock x:Name="StreakTotalText" Text="—" Classes="metric-value"/></StackPanel>
-                <StackPanel Grid.Column="2" Spacing="3"><TextBlock Text="最近執行" Classes="subtle" FontSize="12"/><TextBlock x:Name="CheckinStatusText" Text="尚未更新" Classes="metric-value" FontSize="19"/></StackPanel>
+                <StackPanel Grid.Column="2" Spacing="3"><TextBlock Text="剩餘點數合計" Classes="subtle" FontSize="12"/><TextBlock x:Name="PointsTotalText" Text="—" Classes="metric-value-compact"/></StackPanel>
+                <StackPanel Grid.Column="3" Spacing="3"><TextBlock Text="最近執行" Classes="subtle" FontSize="12"/><TextBlock x:Name="CheckinStatusText" Text="尚未更新" Classes="metric-value" FontSize="19"/></StackPanel>
               </Grid>
               <Grid ColumnDefinitions="*,*,*" ColumnSpacing="24">
                 <StackPanel Spacing="3"><TextBlock Text="上次成功" Classes="subtle" FontSize="12"/><TextBlock x:Name="LastSuccessText" Text="—" Classes="metric-value-compact"/></StackPanel>

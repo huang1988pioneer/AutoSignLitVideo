@@ -168,8 +168,10 @@ cmd /c npm run checkin:all
 日誌中也會輸出桌面端可解析的格式，例如：
 
 ```text
-- #6 samafengtu: checked_in reward=+10 streak=4
+- #6 samafengtu: checked_in reward=+10 streak=4 points=2291
 ```
+
+`reward=` 是當日簽到獎勵階層；`points=` 是網站右上角的使用者剩餘點數。
 
 GitHub Actions 每次排程結束後會上傳 artifact `litmedia-streaks-<run_id>`（含 `streaks.json` / `streaks.md`）。
 

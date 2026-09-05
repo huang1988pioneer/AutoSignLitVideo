@@ -53,8 +53,9 @@ export function buildCheckinRecord({ accountIndex, accountLabel, result, error }
 }
 
 /**
- * Compact line parsed by LitMediaFlow desktop (`streak=N`).
- * Example: `- #6 samafengtu-checkin: checked_in reward=+10 streak=4`
+ * Compact line parsed by LitMediaFlow desktop (`streak=N`, `points=N`).
+ * Example: `- #6 samafengtu-checkin: checked_in reward=+10 streak=4 points=2291`
+ * `points=` is remaining user points (header balance), not the daily reward.
  * @param {CheckinRecord} record
  */
 export function formatCompactResultLine(record) {
@@ -67,6 +68,9 @@ export function formatCompactResultLine(record) {
   }
   if (record.streakDays != null) {
     parts.push(`streak=${record.streakDays}`);
+  }
+  if (record.creditBalance != null) {
+    parts.push(`points=${record.creditBalance}`);
   }
   if (record.status === 'failed' && record.message) {
     parts.push(`error=${compactMessage(record.message)}`);
@@ -120,11 +124,14 @@ export async function writeStreakRegistry(records, options = {}) {
     .sort((a, b) => (a.account ?? 9999) - (b.account ?? 9999));
 
   const withStreak = accounts.filter((row) => row.streakDays != null && row.streakDays > 0);
+  const withPoints = accounts.filter((row) => row.creditBalance != null);
   const payload = {
     generatedAt: new Date().toISOString(),
     accountCount: accounts.length,
     streakReportedCount: withStreak.length,
     totalStreakDays: withStreak.reduce((sum, row) => sum + (row.streakDays || 0), 0),
+    pointsReportedCount: withPoints.length,
+    totalPoints: withPoints.reduce((sum, row) => sum + (row.creditBalance || 0), 0),
     accounts: accounts.map((row) => ({
       account: row.account,
       label: row.label,
@@ -132,6 +139,7 @@ export async function writeStreakRegistry(records, options = {}) {
       streakDays: row.streakDays,
       lastSignDay: row.lastSignDay,
       pointsAwarded: row.pointsAwarded,
+      creditBalance: row.creditBalance,
       finishedAt: row.finishedAt
     }))
   };
@@ -161,6 +169,8 @@ async function writeAccountStepSummary(record) {
     record.streakDays != null ? String(record.streakDays) : '—';
   const reward =
     record.pointsAwarded != null ? `+${record.pointsAwarded}` : '—';
+  const points =
+    record.creditBalance != null ? String(record.creditBalance) : '—';
   const status = statusBadge(record.status);
 
   const lines = [
@@ -171,6 +181,7 @@ async function writeAccountStepSummary(record) {
     `| 狀態 | ${status} |`,
     `| 連續簽到天數 | **${streak}** |`,
     `| 本次獎勵 | ${reward} |`,
+    `| 剩餘點數 | **${points}** |`,
     record.lastSignDay ? `| 最近簽到日 | ${escapeMd(record.lastSignDay)} |` : null,
     '',
     record.message ? `_${escapeMd(compactMessage(record.message, 200))}_` : null,
@@ -194,6 +205,11 @@ async function writeAccountStepSummary(record) {
  * @param {{ generatedAt: string, accountCount: number, streakReportedCount: number, totalStreakDays: number, accounts: Array<object> }} payload
  */
 export function buildStreaksMarkdown(payload) {
+  const pointsTotal =
+    payload.totalPoints != null && Number.isFinite(Number(payload.totalPoints))
+      ? Number(payload.totalPoints)
+      : 0;
+  const pointsReported = payload.pointsReportedCount ?? 0;
   const lines = [
     '## LitMedia 連續簽到天數',
     '',
@@ -201,13 +217,15 @@ export function buildStreaksMarkdown(payload) {
     '| --- | ---: |',
     `| 回報連續天數帳號 | **${payload.streakReportedCount}** / ${payload.accountCount} |`,
     `| 連續天數合計 | **${payload.totalStreakDays}** |`,
+    `| 回報剩餘點數帳號 | **${pointsReported}** / ${payload.accountCount} |`,
+    `| 剩餘點數合計 | **${pointsTotal}** |`,
     '',
     `<sub>${payload.generatedAt}</sub>`,
     '',
     '### 各帳號',
     '',
-    '| # | 帳號 | 狀態 | 連續天數 | 最近簽到 | 獎勵 |',
-    '| ---: | --- | --- | ---: | --- | ---: |'
+    '| # | 帳號 | 狀態 | 連續天數 | 剩餘點數 | 最近簽到 | 獎勵 |',
+    '| ---: | --- | --- | ---: | ---: | --- | ---: |'
   ];
 
   for (const row of payload.accounts) {
@@ -216,8 +234,9 @@ export function buildStreaksMarkdown(payload) {
     const streak = row.streakDays != null ? String(row.streakDays) : '—';
     const last = row.lastSignDay ? escapeMd(row.lastSignDay) : '—';
     const reward = row.pointsAwarded != null ? `+${row.pointsAwarded}` : '—';
+    const points = row.creditBalance != null ? String(row.creditBalance) : '—';
     lines.push(
-      `| ${no} | ${label} | ${statusBadge(row.status)} | **${streak}** | ${last} | ${reward} |`
+      `| ${no} | ${label} | ${statusBadge(row.status)} | **${streak}** | **${points}** | ${last} | ${reward} |`
     );
   }
 
@@ -225,7 +244,7 @@ export function buildStreaksMarkdown(payload) {
     '',
     '---',
     '',
-    '<sub>連續天數來自 LitMedia `continue_day`（簽到面板 API）。</sub>',
+    '<sub>連續天數來自 LitMedia `continue_day`；剩餘點數來自 `get-user-info`（帳號餘額，不是每日簽到 +N）。</sub>',
     ''
   );
 
