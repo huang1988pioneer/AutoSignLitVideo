@@ -267,6 +267,8 @@ jobs:
     name: Summarize streaks
     needs: [checkin]
     if: always()
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -301,3 +303,37 @@ jobs:
             test-results/checkin-summary.md
           if-no-files-found: warn
           retention-days: 30
+
+      - name: Publish streaks.json to the results branch
+        if: always()
+        continue-on-error: true
+        run: |
+          set -eu
+          if [ ! -f test-results/streaks.json ]; then
+            echo "No streaks.json to publish; skipping."
+            exit 0
+          fi
+
+          staged="$(mktemp -d)"
+          cp test-results/streaks.json "$staged/streaks.json"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          if git fetch --depth=1 origin results; then
+            git checkout -B results FETCH_HEAD
+          else
+            git checkout --orphan results
+            git reset
+          fi
+
+          cp "$staged/streaks.json" streaks.json
+          git add -f streaks.json
+
+          if git diff --cached --quiet; then
+            echo "streaks.json unchanged; nothing to publish."
+            exit 0
+          fi
+
+          git commit -m "chore(results): publish streaks.json from run ${{ github.run_id }}"
+          git push origin results
