@@ -5,4 +5,15 @@
   <Application.Styles>
     <FluentTheme />
   </Application.Styles>
+
+  <Application.Resources>
+    <!-- 品牌色票：清爽藍白 -->
+    <SolidColorBrush x:Key="BrandPrimaryBrush" Color="#2563EB"/>
+    <SolidColorBrush x:Key="BrandPrimaryDarkBrush" Color="#1D4ED8"/>
+    <SolidColorBrush x:Key="BrandInkBrush" Color="#0F172A"/>
+    <SolidColorBrush x:Key="BrandMutedBrush" Color="#64748B"/>
+    <SolidColorBrush x:Key="BrandLineBrush" Color="#E4E9F2"/>
+    <SolidColorBrush x:Key="BrandSurfaceBrush" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="BrandCanvasBrush" Color="#F4F6FB"/>
+  </Application.Resources>
 </Application>

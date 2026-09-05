@@ -8,11 +8,6 @@ namespace LitMediaFlow;
 public partial class MainWindow : Window
 {
     private const int AccountCount = 33;
-    private static readonly Avalonia.Media.IBrush HealthyBrush = Avalonia.Media.Brush.Parse("#16A34A");
-    private static readonly Avalonia.Media.IBrush MutedBrush = Avalonia.Media.Brush.Parse("#94A3B8");
-    private static readonly Avalonia.Media.IBrush HeaderBrush = Avalonia.Media.Brush.Parse("#94A3B8");
-    private static readonly Avalonia.Media.IBrush RowBackgroundBrush = Avalonia.Media.Brush.Parse("#F8FAFC");
-    private static readonly Avalonia.Media.IBrush RowBorderBrush = Avalonia.Media.Brush.Parse("#E9EDF4");
     private static readonly string[] BrowserOptions =
     [
         "Chromium（預設）",
@@ -92,7 +87,7 @@ public partial class MainWindow : Window
                 Classes = { "account-row" },
                 FontWeight = Avalonia.Media.FontWeight.SemiBold
             };
-            var stateText = new TextBlock { Text = account.State, Classes = { "account-row" }, Foreground = account.IsHealthy ? HealthyBrush : MutedBrush, FontWeight = account.IsHealthy ? Avalonia.Media.FontWeight.SemiBold : Avalonia.Media.FontWeight.Normal };
+            var stateText = new TextBlock { Text = account.State, Classes = { "account-row" }, Foreground = account.IsHealthy ? Avalonia.Media.Brushes.Teal : Avalonia.Media.Brushes.DimGray };
             Grid.SetColumn(aliasText, 1);
             Grid.SetColumn(pointsText, 2);
             Grid.SetColumn(stateText, 3);
@@ -100,25 +95,17 @@ public partial class MainWindow : Window
             row.Children.Add(aliasText);
             row.Children.Add(pointsText);
             row.Children.Add(stateText);
-            DashboardAccountsPanel.Children.Add(new Border
-            {
-                Background = RowBackgroundBrush,
-                BorderBrush = RowBorderBrush,
-                BorderThickness = new Avalonia.Thickness(1),
-                CornerRadius = new Avalonia.CornerRadius(10),
-                Padding = new Avalonia.Thickness(14, 10),
-                Child = row
-            });
+            DashboardAccountsPanel.Children.Add(row);
         }
     }
 
     private static Grid BuildAccountHeader()
     {
-        var row = new Grid { ColumnDefinitions = new ColumnDefinitions("76,150,88,*"), Margin = new Avalonia.Thickness(14, 0, 14, 2) };
-        var numberText = new TextBlock { Text = "帳號", FontSize = 11.5, FontWeight = Avalonia.Media.FontWeight.SemiBold, Foreground = HeaderBrush };
-        var aliasText = new TextBlock { Text = "別名", FontSize = 11.5, FontWeight = Avalonia.Media.FontWeight.SemiBold, Foreground = HeaderBrush };
-        var pointsText = new TextBlock { Text = "點數", FontSize = 11.5, FontWeight = Avalonia.Media.FontWeight.SemiBold, Foreground = HeaderBrush };
-        var stateText = new TextBlock { Text = "狀態", FontSize = 11.5, FontWeight = Avalonia.Media.FontWeight.SemiBold, Foreground = HeaderBrush };
+        var row = new Grid { ColumnDefinitions = new ColumnDefinitions("76,150,88,*"), Margin = new Avalonia.Thickness(0, 0, 0, 4) };
+        var numberText = new TextBlock { Text = "帳號", FontSize = 12, Foreground = Avalonia.Media.Brushes.DimGray };
+        var aliasText = new TextBlock { Text = "別名", FontSize = 12, Foreground = Avalonia.Media.Brushes.DimGray };
+        var pointsText = new TextBlock { Text = "點數", FontSize = 12, Foreground = Avalonia.Media.Brushes.DimGray };
+        var stateText = new TextBlock { Text = "狀態", FontSize = 12, Foreground = Avalonia.Media.Brushes.DimGray };
         Grid.SetColumn(aliasText, 1);
         Grid.SetColumn(pointsText, 2);
         Grid.SetColumn(stateText, 3);
@@ -419,15 +406,7 @@ public partial class MainWindow : Window
             var input = new TextBox { Width = 340, Text = _aliases.GetValueOrDefault(number), Watermark = "例如：工作帳號" };
             _aliasInputs[number] = input;
             var row = new StackPanel { Orientation = Avalonia.Layout.Orientation.Horizontal, Spacing = 12 };
-            row.Children.Add(new TextBlock
-            {
-                Text = $"帳號 {number:00}",
-                Width = 74,
-                FontSize = 13.5,
-                FontWeight = Avalonia.Media.FontWeight.SemiBold,
-                Foreground = Avalonia.Media.Brush.Parse("#334155"),
-                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
-            });
+            row.Children.Add(new TextBlock { Text = $"帳號 {number:00}", Width = 74, VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center });
             row.Children.Add(input);
             AliasListPanel.Children.Add(row);
         }

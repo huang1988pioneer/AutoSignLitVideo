@@ -1,0 +1,122 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="LitMediaFlow.MainWindow"
+        Width="1120" Height="780" MinWidth="900" MinHeight="640"
+        Title="LitMedia Flow — 登入狀態擷取器"
+        Background="#F5F7F8">
+  <Window.Styles>
+    <Style Selector="TextBlock.page-title"><Setter Property="FontSize" Value="30"/><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="Foreground" Value="#142E38"/></Style>
+    <Style Selector="TextBlock.subtle"><Setter Property="Foreground" Value="#58707A"/><Setter Property="FontSize" Value="14"/></Style>
+    <Style Selector="TextBlock.section-title"><Setter Property="FontSize" Value="20"/><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="Foreground" Value="#142E38"/></Style>
+    <Style Selector="Border.surface"><Setter Property="Background" Value="White"/><Setter Property="CornerRadius" Value="14"/><Setter Property="Padding" Value="26"/></Style>
+    <Style Selector="Button.nav"><Setter Property="Background" Value="Transparent"/><Setter Property="Foreground" Value="#C8DAD8"/><Setter Property="HorizontalAlignment" Value="Stretch"/><Setter Property="HorizontalContentAlignment" Value="Left"/><Setter Property="Padding" Value="13,11"/><Setter Property="CornerRadius" Value="8"/><Setter Property="FontSize" Value="14"/></Style>
+    <Style Selector="Button.nav:pointerover"><Setter Property="Background" Value="#1E5052"/><Setter Property="Foreground" Value="White"/></Style>
+    <Style Selector="Button.nav-active"><Setter Property="Background" Value="#20585A"/><Setter Property="Foreground" Value="White"/><Setter Property="FontWeight" Value="SemiBold"/></Style>
+    <Style Selector="Button.primary"><Setter Property="Background" Value="#087F78"/><Setter Property="Foreground" Value="White"/><Setter Property="Padding" Value="18,11"/><Setter Property="CornerRadius" Value="7"/><Setter Property="FontWeight" Value="SemiBold"/></Style>
+    <Style Selector="Button.primary:pointerover"><Setter Property="Background" Value="#056B66"/></Style>
+    <Style Selector="Button.secondary"><Setter Property="Background" Value="#E7EFEF"/><Setter Property="Foreground" Value="#183941"/><Setter Property="Padding" Value="15,10"/><Setter Property="CornerRadius" Value="7"/></Style>
+    <Style Selector="Button.secondary:pointerover"><Setter Property="Background" Value="#D5E5E4"/></Style>
+    <Style Selector="TextBlock.metric-value"><Setter Property="FontSize" Value="26"/><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="Foreground" Value="#087F78"/></Style>
+    <Style Selector="TextBlock.metric-value-compact"><Setter Property="FontSize" Value="19"/><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="Foreground" Value="#087F78"/></Style>
+    <Style Selector="TextBlock.account-row"><Setter Property="FontSize" Value="14"/><Setter Property="Foreground" Value="#1C3540"/></Style>
+  </Window.Styles>
+
+  <Grid ColumnDefinitions="244,*">
+    <Border Background="#10383B" Padding="25,26">
+      <Grid RowDefinitions="Auto,*,Auto">
+        <StackPanel Spacing="7">
+          <TextBlock Text="LitMedia Flow" FontSize="24" FontWeight="Bold" Foreground="White"/>
+          <TextBlock Text="安全登入狀態擷取器" Foreground="#D0E1DF" FontSize="13"/>
+          <TextBlock Text="每日自動簽到（台北時間）&#xA;05:00、14:00、21:00&#xA;各帳號隔離啟動。" Foreground="#A9C5C3" FontSize="12" LineHeight="17"/>
+        </StackPanel>
+
+        <StackPanel Grid.Row="1" Margin="0,34,0,0" Spacing="5" VerticalAlignment="Top">
+          <TextBlock Text="主要功能" Foreground="#A9C5C3" FontSize="12" FontWeight="SemiBold" Margin="12,0,0,4"/>
+          <Button x:Name="DashboardNavButton" Classes="nav nav-active" Click="DashboardNav_OnClick">GitHub Actions 儀表板</Button>
+          <Button x:Name="LoginNavButton" Classes="nav" Click="LoginNav_OnClick">建立登入狀態</Button>
+          <Button x:Name="AccountsNavButton" Classes="nav" Click="AccountsNav_OnClick">帳號設定</Button>
+          <Button x:Name="GuideNavButton" Classes="nav" Click="GuideNav_OnClick">GitHub 設定指引</Button>
+        </StackPanel>
+
+        <Border Grid.Row="2" Background="#1C5354" CornerRadius="10" Padding="14">
+          <StackPanel Spacing="6">
+            <TextBlock Text="不會儲存帳密" Foreground="White" FontWeight="SemiBold" FontSize="13"/>
+            <TextBlock Text="只會把已登入的瀏覽器狀態複製到剪貼簿，供你自行存入 GitHub Secrets。" TextWrapping="Wrap" Foreground="#CDE1DF" FontSize="12" LineHeight="17"/>
+          </StackPanel>
+        </Border>
+      </Grid>
+    </Border>
+
+    <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+      <StackPanel Margin="48,40,48,34" MaxWidth="760" Spacing="22">
+        <StackPanel x:Name="DashboardView" Spacing="20">
+          <StackPanel Spacing="6">
+            <TextBlock Text="GitHub Actions 儀表板" Classes="page-title"/>
+            <TextBlock Text="手動執行每日簽到、查看本機帳號登入狀態與 GitHub Actions 設定。" Classes="subtle" TextWrapping="Wrap"/>
+          </StackPanel>
+          <Border Classes="surface">
+            <StackPanel Spacing="21">
+              <StackPanel Spacing="6">
+                <TextBlock Text="每日簽到狀態" Classes="section-title"/>
+                <TextBlock Text="從此電腦啟動既有的檢查流程；GitHub Actions 的最新結果請於 GitHub 網頁查看。" Classes="subtle" TextWrapping="Wrap"/>
+              </StackPanel>
+              <StackPanel Orientation="Horizontal" Spacing="11">
+                <Button x:Name="RunCheckinButton" Classes="primary" Click="RunCheckinButton_OnClick">手動觸發每日簽到</Button>
+                <Button x:Name="RefreshDashboardButton" Classes="secondary" Click="RefreshDashboardButton_OnClick">更新執行結果</Button>
+              </StackPanel>
+              <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="18">
+                <StackPanel Spacing="3"><TextBlock Text="已設定帳號" Classes="subtle" FontSize="12"/><TextBlock x:Name="ConfiguredAccountsText" Text="0 個" Classes="metric-value"/></StackPanel>
+                <StackPanel Grid.Column="1" Spacing="3"><TextBlock Text="回報連續天數帳號" Classes="subtle" FontSize="12"/><TextBlock x:Name="StreakTotalText" Text="—" Classes="metric-value"/></StackPanel>
+                <StackPanel Grid.Column="2" Spacing="3"><TextBlock Text="剩餘點數合計" Classes="subtle" FontSize="12"/><TextBlock x:Name="PointsTotalText" Text="—" Classes="metric-value-compact"/></StackPanel>
+                <StackPanel Grid.Column="3" Spacing="3"><TextBlock Text="最近執行" Classes="subtle" FontSize="12"/><TextBlock x:Name="CheckinStatusText" Text="尚未更新" Classes="metric-value" FontSize="19"/></StackPanel>
+              </Grid>
+              <Grid ColumnDefinitions="*,*,*" ColumnSpacing="24">
+                <StackPanel Spacing="3"><TextBlock Text="上次成功" Classes="subtle" FontSize="12"/><TextBlock x:Name="LastSuccessText" Text="—" Classes="metric-value-compact"/></StackPanel>
+                <StackPanel Grid.Column="1" Spacing="3"><TextBlock Text="上次失敗" Classes="subtle" FontSize="12"/><TextBlock x:Name="LastFailureText" Text="—" Classes="metric-value-compact"/></StackPanel>
+                <StackPanel Grid.Column="2" Spacing="3"><TextBlock Text="連續成功天數" Classes="subtle" FontSize="12"/><TextBlock x:Name="ConsecutiveSuccessDaysText" Text="—" Classes="metric-value-compact"/></StackPanel>
+              </Grid>
+              <Border Background="#EEF4F4" CornerRadius="8" Padding="13,10">
+                <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
+                  <StackPanel Spacing="3">
+                    <TextBlock Text="程式碼行數" Classes="subtle" FontSize="12"/>
+                    <TextBlock x:Name="CodeLineCountText" Text="—" Classes="metric-value-compact"/>
+                  </StackPanel>
+                  <TextBlock Grid.Column="1" VerticalAlignment="Center" Foreground="#34535A" Text="只計算來源檔的非空行，不含 bin / obj。" TextWrapping="Wrap"/>
+                </Grid>
+              </Border>
+              <Border Background="#EEF4F4" CornerRadius="8" Padding="13,10">
+                <TextBlock x:Name="DashboardStatusText" Text="正在讀取本機帳號登入狀態。" Foreground="#34535A" TextWrapping="Wrap"/>
+              </Border>
+              <StackPanel Spacing="9">
+                <TextBlock Text="帳號狀態" FontSize="16" FontWeight="SemiBold" Foreground="#1C3540"/>
+                <ScrollViewer MaxHeight="300" VerticalScrollBarVisibility="Auto">
+                  <StackPanel x:Name="DashboardAccountsPanel" Spacing="7"/>
+                </ScrollViewer>
+              </StackPanel>
+            </StackPanel>
+          </Border>
+        </StackPanel>
+
+        <StackPanel x:Name="LoginView" IsVisible="False" Spacing="20">
+          <StackPanel Spacing="6"><TextBlock Text="建立登入狀態" Classes="page-title"/><TextBlock Text="選擇帳號與瀏覽器後完成人工登入，再把對應的 Base64 值存入 GitHub Secret。預設 Chromium；Firefox / Edge 為備案。" Classes="subtle" TextWrapping="Wrap"/></StackPanel>
+          <Border Classes="surface"><StackPanel Spacing="15"><TextBlock Text="選擇帳號" Classes="section-title"/><StackPanel Orientation="Horizontal" Spacing="12"><ComboBox x:Name="AccountComboBox" Width="160" SelectedIndex="0"/><TextBlock x:Name="AliasText" Classes="subtle" VerticalAlignment="Center"/></StackPanel><Border Background="#E7F3F1" CornerRadius="7" Padding="12,8" HorizontalAlignment="Left"><TextBlock x:Name="SecretNameText" Foreground="#056B66" FontFamily="Consolas"/></Border></StackPanel></Border>
+          <Border Classes="surface"><StackPanel Spacing="12"><TextBlock Text="瀏覽器" Classes="section-title"/><TextBlock Text="登入與簽到請使用同一瀏覽器。Chromium 為預設；若登入或驗證異常，可改選 Firefox 或 Edge 備案後重新保存登入狀態。" Classes="subtle" TextWrapping="Wrap"/><ComboBox x:Name="BrowserComboBox" Width="280" SelectedIndex="0"/><TextBlock x:Name="BrowserHintText" Classes="subtle" TextWrapping="Wrap"/></StackPanel></Border>
+          <Border Classes="surface"><StackPanel Spacing="12"><TextBlock Text="開啟登入流程" Classes="section-title"/><TextBlock x:Name="LoginFlowHintText" Text="程式會開啟既有的 Playwright 登入流程。請自行完成密碼、OTP、CAPTCHA 或任何帳號驗證，並在終端機按 Enter 儲存登入狀態。" Classes="subtle" TextWrapping="Wrap"/><Button x:Name="RunLoginButton" Classes="primary" Click="RunLoginButton_OnClick" HorizontalAlignment="Left">開啟登入流程</Button></StackPanel></Border>
+          <Border Classes="surface"><StackPanel Spacing="12"><TextBlock Text="複製 GitHub Secret" Classes="section-title"/><TextBlock x:Name="StateDescription" Classes="subtle" TextWrapping="Wrap"/><StackPanel Orientation="Horizontal" Spacing="10"><Button x:Name="CopyStateButton" Classes="primary" IsEnabled="False" Click="CopyStateButton_OnClick">複製 Base64</Button><Button x:Name="CopySecretButton" Classes="secondary" IsEnabled="False" Click="CopySecretButton_OnClick">複製 Secret 名稱</Button></StackPanel><StackPanel Orientation="Horizontal" Spacing="10"><Button x:Name="UploadSecretButton" Classes="primary" IsEnabled="False" Click="UploadSecretButton_OnClick">寫入 GitHub Secret</Button><Button x:Name="OpenSecretsButton" Classes="secondary" Click="OpenSecretsButton_OnClick">開啟 Secrets 頁面</Button></StackPanel><TextBlock Classes="subtle" TextWrapping="Wrap" Text="寫入 GitHub Secret 會透過本機已登入的 GitHub CLI，把 Base64 存成 Actions Secret。若要手動貼上，請先複製 Base64，再開啟 Secrets 頁面。"/></StackPanel></Border>
+          <Border Background="#EAF0F1" CornerRadius="8" Padding="14"><TextBlock x:Name="StatusText" Foreground="#29464B" Text="請先選擇帳號。" TextWrapping="Wrap"/></Border>
+        </StackPanel>
+
+        <StackPanel x:Name="AccountsView" IsVisible="False" Spacing="20">
+          <StackPanel Spacing="6"><TextBlock Text="帳號設定" Classes="page-title"/><TextBlock Text="為每個帳號設定便於辨識的別名；別名只儲存在這台電腦。" Classes="subtle" TextWrapping="Wrap"/></StackPanel>
+          <Border Classes="surface"><StackPanel Spacing="14"><TextBlock Text="帳號 1 至 33" Classes="section-title"/><ScrollViewer MaxHeight="430" VerticalScrollBarVisibility="Auto"><StackPanel x:Name="AliasListPanel" Spacing="8"/></ScrollViewer><Button Classes="primary" HorizontalAlignment="Left" Click="SaveAliasesButton_OnClick">儲存帳號設定</Button></StackPanel></Border>
+        </StackPanel>
+
+        <StackPanel x:Name="GuideView" IsVisible="False" Spacing="20">
+          <StackPanel Spacing="6"><TextBlock Text="GitHub 設定指引" Classes="page-title"/><TextBlock Text="把已登入的瀏覽器狀態安全存成 GitHub Actions Secret，讓每日簽到使用。" Classes="subtle" TextWrapping="Wrap"/></StackPanel>
+          <Border Classes="surface"><StackPanel Spacing="13"><TextBlock Text="設定步驟" Classes="section-title"/><TextBlock Text="1. 在「建立登入狀態」完成登入。&#xA;2. 按「寫入 GitHub Secret」直接存入 Actions Secret；或先複製 Base64，再開啟 Secrets 頁面手動新增。&#xA;3. Secret 名稱為 LITMEDIA_STORAGE_STATE_BASE64_N。&#xA;4. 在 GitHub Actions 手動執行工作流程，查看最新執行結果。" TextWrapping="Wrap" LineHeight="25" Foreground="#2D4750"/><StackPanel Orientation="Horizontal" Spacing="10"><Button Classes="primary" HorizontalAlignment="Left" Click="OpenActionsButton_OnClick">開啟 GitHub Actions</Button><Button Classes="secondary" HorizontalAlignment="Left" Click="OpenSecretsButton_OnClick">開啟 Secrets 頁面</Button></StackPanel></StackPanel></Border>
+          <Border Background="#FFF4E5" CornerRadius="8" Padding="14"><TextBlock Foreground="#714D16" Text="LitMedia 若要求 OTP、CAPTCHA 或其他風險驗證，請在瀏覽器中自行完成後，重新儲存登入狀態。" TextWrapping="Wrap"/></Border>
+        </StackPanel>
+      </StackPanel>
+    </ScrollViewer>
+  </Grid>
+</Window>

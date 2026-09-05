@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LitMedia Flow 新介面預覽</title>
+<style>
+  :root{
+    --ink:#0F172A; --muted:#64748B; --line:#E4E9F2; --canvas:#F4F6FB;
+    --primary:#2563EB; --primary-dark:#1D4ED8; --soft:#E4EDFD;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:#E8EBF2;font:14px/1.5 "Segoe UI","Microsoft JhengHei UI","PingFang TC","Noto Sans TC",sans-serif;color:var(--ink);padding:28px}
+  .wrap{max-width:1220px;margin:0 auto}
+  .caption{font-size:13px;color:#5b6577;margin:0 0 14px 2px}
+  .app{display:grid;grid-template-columns:256px 1fr;background:var(--canvas);border-radius:14px;overflow:hidden;box-shadow:0 18px 50px rgba(15,23,42,.18);border:1px solid #d7dce6;min-height:760px}
+
+  /* sidebar */
+  .side{background:linear-gradient(180deg,#0B1F3A 0%,#122E56 100%);padding:20px}
+  .brand{display:flex;gap:12px;align-items:center}
+  .brand .mark{width:42px;height:42px;border-radius:13px;background:linear-gradient(135deg,#60A5FA,#2563EB);display:flex;align-items:center;justify-content:center}
+  .brand h1{margin:0;font-size:17px;color:#fff;font-weight:700}
+  .brand p{margin:2px 0 0;font-size:11.5px;color:#8FA9CC}
+  .sidecard{margin-top:18px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:14px 12px}
+  .sidecard .hd{display:flex;gap:8px;align-items:center;color:#DCE8F8;font-size:12.5px;font-weight:600}
+  .sidecard .big{color:#fff;font-size:14px;font-weight:600;margin:8px 0 4px}
+  .sidecard .sm{color:#8FA9CC;font-size:11.5px;margin:0}
+  .navlabel{color:#7189AD;font-size:11px;font-weight:600;margin:28px 0 8px 13px}
+  .nav{display:flex;flex-direction:column;gap:4px}
+  .nav a{display:flex;gap:11px;align-items:center;padding:11px 13px;border-radius:11px;color:#C3D3E9;font-size:13.5px;text-decoration:none}
+  .nav a svg{fill:#93A9C6}
+  .nav a:hover{background:#1B3358;color:#fff}
+  .nav a.active{background:#2563EB;color:#fff;font-weight:600}
+  .nav a.active svg{fill:#fff}
+  .side .foot{margin-top:26px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:14px}
+  .side .foot .hd{display:flex;gap:8px;align-items:center;color:#fff;font-size:12.5px;font-weight:600}
+  .side .foot p{margin:8px 0 0;color:#9DB5D4;font-size:11.5px;line-height:1.55}
+
+  /* main */
+  .main{padding:38px 44px;overflow:auto}
+  .inner{max-width:880px}
+  .ptitle{display:flex;gap:13px;align-items:center}
+  .ptitle .badge{width:44px;height:44px;border-radius:14px;background:var(--soft);display:flex;align-items:center;justify-content:center}
+  .ptitle h2{margin:0;font-size:27px;font-weight:700}
+  .sub{color:var(--muted);font-size:13.5px;margin:8px 0 0}
+  .surface{background:#fff;border:1px solid var(--line);border-radius:16px;padding:26px;box-shadow:0 2 10 rgba(15,23,42,.08);box-shadow:0 2px 10px rgba(15,23,42,.06);margin-top:20px}
+  .sec{font-size:17px;font-weight:600;margin:0}
+  .row{display:flex;gap:11px;margin:22px 0}
+  .btn{display:inline-flex;gap:8px;align-items:center;border-radius:10px;font-size:13.5px;padding:11px 18px;border:0;cursor:pointer}
+  .btn.primary{background:var(--primary);color:#fff;font-weight:600}
+  .btn.primary:hover{background:var(--primary-dark)}
+  .btn.sec{background:#fff;color:#1E293B;border:1px solid #CBD5E1;padding:10px 16px}
+  .btn.sec:hover{background:#F1F5F9;border-color:#94A3B8}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .stat{background:#fff;border:1px solid var(--line);border-radius:14px;padding:15px 16px}
+  .stat .hd{display:flex;gap:9px;align-items:center}
+  .chip{width:30px;height:30px;border-radius:10px;display:flex;align-items:center;justify-content:center}
+  .eyebrow{font-size:11.5px;font-weight:600;color:#94A3B8}
+  .val{font-size:26px;font-weight:700;margin:11px 0 0}
+  .val.sm{font-size:17px;font-weight:600;color:#1E293B}
+  .panel{background:#F8FAFC;border:1px solid #E9EDF4;border-radius:14px;padding:16px 18px;margin-top:22px;display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  .note{display:flex;gap:11px;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:12px;padding:13px 15px;color:#1E40AF;font-size:13px;margin-top:22px}
+  .note.warn{background:#FFFBEB;border-color:#FDE68A;color:#92400E}
+  .tbl{margin-top:22px}
+  .thead,.trow{display:grid;grid-template-columns:76px 150px 88px 1fr;align-items:center}
+  .thead{padding:0 14px 2px;font-size:11.5px;font-weight:600;color:#94A3B8}
+  .trow{background:#F8FAFC;border:1px solid #E9EDF4;border-radius:10px;padding:10px 14px;margin-top:6px;font-size:13.5px;color:#334155}
+  .ok{color:#16A34A;font-weight:600}
+  .off{color:#94A3B8}
+  .steps{display:grid;gap:18px;margin-top:18px}
+  .step{display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center}
+  .num{width:28px;height:28px;border-radius:14px;background:var(--primary);color:#fff;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center}
+  .step p{margin:0;color:#334155;font-size:13.5px}
+  code{background:#F1F5F9;border:1px solid #E2E8F0;border-radius:10px;padding:9px 13px;color:#1D4ED8;font:13px "Consolas",monospace;display:inline-block}
+  @media (max-width:900px){.app{grid-template-columns:1fr}.side{display:none}.stats{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<p class="caption">LitMedia Flow — 重新設計後的介面預覽（清爽藍白 + 向量圖示）。此頁為靜態預覽，實際畫面由 Avalonia 繪製。</p>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="side">
+    <div class="brand">
+      <div class="mark"><svg width="19" height="19" viewBox="0 0 24 24"><path fill="#fff" d="M10,16.5L16,12L10,7.5V16.5M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2Z"/></svg></div>
+      <div><h1>LitMedia Flow</h1><p>自動簽到控制台</p></div>
+    </div>
+
+    <div class="sidecard">
+      <div class="hd"><svg width="15" height="15" viewBox="0 0 24 24"><path fill="#7FA8E8" d="M12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22C6.47,22 2,17.5 2,12A10,10 0 0,1 12,2M12.5,7V12.25L17,14.92L16.25,16.15L11,13V7H12.5Z"/></svg> 每日排程</div>
+      <div class="big">05:00 · 14:00 · 21:00</div>
+      <p class="sm">台北時間，各帳號隔離啟動</p>
+    </div>
+
+    <div class="navlabel">主要功能</div>
+    <nav class="nav">
+      <a class="active" href="#"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M3,13H11V3H3V13M3,21H11V15H3V21M13,21H21V11H13V21M13,3V9H21V3H13Z"/></svg>儀表板</a>
+      <a href="#"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M7,14A2,2 0 0,1 5,12A2,2 0 0,1 7,10A2,2 0 0,1 9,12A2,2 0 0,1 7,14M12.65,10C11.83,7.67 9.61,6 7,6A6,6 0 0,0 1,12A6,6 0 0,0 7,18C9.61,18 11.83,16.33 12.65,14H17V18H21V14H23V10H12.65Z"/></svg>建立登入狀態</a>
+      <a href="#"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z"/></svg>帳號設定</a>
+      <a href="#"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M12,21.5C10.65,20.65 8.2,20 6.5,20C4.85,20 3.15,20.3 1.75,21.05C1.65,21.1 1.6,21.1 1.5,21.1C1.25,21.1 1,20.85 1,20.6V6C1.6,5.55 2.25,5.25 3,5C4.11,4.65 5.33,4.5 6.5,4.5C8.45,4.5 10.55,4.9 12,6C13.45,4.9 15.55,4.5 17.5,4.5C18.67,4.5 19.89,4.65 21,5C21.75,5.25 22.4,5.55 23,6V20.6C23,20.85 22.75,21.1 22.5,21.1C22.4,21.1 22.35,21.1 22.25,21.05C20.85,20.3 19.15,20 17.5,20C15.8,20 13.35,20.65 12,21.5Z"/></svg>GitHub 設定指引</a>
+    </nav>
+
+    <div class="foot">
+      <div class="hd"><svg width="15" height="15" viewBox="0 0 24 24"><path fill="#7FA8E8" d="M12,17A2,2 0 0,0 14,15C14,13.89 13.1,13 12,13A2,2 0 0,0 10,15A2,2 0 0,0 12,17M18,8A2,2 0 0,1 20,10V20A2,2 0 0,1 18,22H6A2,2 0 0,1 4,20V10C4,8.89 4.9,8 6,8H7V6A5,5 0 0,1 12,1A5,5 0 0,1 17,6V8H18M12,3A3,3 0 0,0 9,6V8H15V6A3,3 0 0,0 12,3Z"/></svg> 不會儲存帳密</div>
+      <p>只會把已登入的瀏覽器狀態複製到剪貼簿，供你自行存入 GitHub Secrets。</p>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main"><div class="inner">
+    <div class="ptitle">
+      <div class="badge"><svg width="21" height="21" viewBox="0 0 24 24"><path fill="#2563EB" d="M3,13H11V3H3V13M3,21H11V15H3V21M13,21H21V11H13V21M13,3V9H21V3H13Z"/></svg></div>
+      <h2>GitHub Actions 儀表板</h2>
+    </div>
+    <p class="sub">手動執行每日簽到、查看本機帳號登入狀態與 GitHub Actions 設定。</p>
+
+    <section class="surface">
+      <p class="sec">每日簽到狀態</p>
+      <p class="sub">從此電腦啟動既有的檢查流程；GitHub Actions 的最新結果請於 GitHub 網頁查看。</p>
+
+      <div class="row">
+        <button class="btn primary"><svg width="15" height="15" viewBox="0 0 24 24"><path fill="#fff" d="M8,5.14V19.14L19,12.14L8,5.14Z"/></svg>手動觸發每日簽到</button>
+        <button class="btn sec"><svg width="15" height="15" viewBox="0 0 24 24"><path fill="#475569" d="M17.65,6.35C16.2,4.9 14.21,4 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20C15.73,20 18.84,17.45 19.73,14H17.65C16.83,16.33 14.61,18 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6C13.66,6 15.14,6.69 16.22,7.78L13,11H20V4L17.65,6.35Z"/></svg>更新執行結果</button>
+      </div>
+
+      <div class="stats">
+        <div class="stat"><div class="hd"><div class="chip" style="background:#E4EDFD"><svg width="15" height="15" viewBox="0 0 24 24"><path fill="#2563EB" d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z"/></svg></div><span class="eyebrow">已設定帳號</span></div><p class="val">12 個</p></div>
+        <div class="stat"><div class="hd"><div class="chip" style="background:#FFEDD5"><svg width="15" height="15" viewBox="0 0 24 24"><path fill="#EA580C" d="M17.66,11.2C17.43,10.9 17.15,10.64 16.89,10.38C16.22,9.78 15.46,9.35 14.82,8.72C13.33,7.26 13,4.85 13.95,3C13,3.23 12.17,3.75 11.46,4.32C8.87,6.4 7.85,10.07 9.07,13.22C9.11,13.32 9.15,13.42 9.15,13.55C9.15,13.77 9,13.97 8.8,14.05C8.57,14.15 8.33,14.09 8.14,13.93C8.08,13.88 8.04,13.83 8,13.76C6.87,12.33 6.69,10.28 7.45,8.64C5.78,10 4.87,12.3 5,14.47C5.06,14.97 5.12,15.47 5.29,15.97C5.43,16.57 5.7,17.17 6,17.7C7.08,19.43 8.95,20.67 10.96,20.92C13.1,21.19 15.39,20.8 17.03,19.32C18.86,17.66 19.5,15 18.56,12.72L18.43,12.46C18.22,12 17.66,11.2 17.66,11.2Z"/></svg></div><span class="eyebrow">回報連續天數</span></div><p class="val">11 / 12 個</p></div>
+        <div class="stat"><div class="hd"><div class="chip" style="background:#DCFCE7"><svg width="15" height="15" viewBox="0 0 24 24"><path fill="#16A34A" d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12.88,17.76V19H11.13V17.79C10.31,17.68 8.83,17.29 8.5,15.24H10.06C10.15,15.87 10.5,16.55 11.94,16.55C13.5,16.55 13.85,15.83 13.85,15.29C13.85,14.56 13.44,13.88 11.64,13.45C9.63,12.96 8.26,12.14 8.26,10.5C8.26,9.09 9.39,8.18 10.79,7.88V6.5H12.54V7.9C14.16,8.28 14.79,9.5 14.84,10.78H13.28C13.24,10 12.86,9.4 11.66,9.4C10.5,9.4 9.83,9.91 9.83,10.63C9.83,11.26 10.31,11.68 12.03,12.12C13.75,12.56 15.42,13.29 15.42,15.28C15.4,16.78 14.28,17.6 12.88,17.76Z"/></svg></div><span class="eyebrow">剩餘點數合計</span></div><p class="val">28,640</p></div>
+        <div class="stat"><div class="hd"><div class="chip" style="background:#EDE9FE"><svg width="15" height="15" viewBox="0 0 24 24"><path fill="#7C3AED" d="M12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22C6.47,22 2,17.5 2,12A10,10 0 0,1 12,2M12.5,7V12.25L17,14.92L16.25,16.15L11,13V7H12.5Z"/></svg></div><span class="eyebrow">最近執行</span></div><p class="val sm" style="font-size:19px">成功 · 09/05 14:02</p></div>
+      </div>
+
+      <div class="panel">
+        <div><p class="eyebrow" style="margin:0">上次成功</p><p class="val sm" style="margin:5px 0 0">09/05 14:02</p></div>
+        <div><p class="eyebrow" style="margin:0">上次失敗</p><p class="val sm" style="margin:5px 0 0">09/01 05:03</p></div>
+        <div><p class="eyebrow" style="margin:0">連續成功天數</p><p class="val sm" style="margin:5px 0 0">4 天</p></div>
+      </div>
+
+      <div class="panel" style="grid-template-columns:auto auto 1fr;align-items:center">
+        <div class="chip" style="background:#E2E8F0"><svg width="15" height="15" viewBox="0 0 24 24"><path fill="#475569" d="M14.6,16.6L19.2,12L14.6,7.4L16,6L22,12L16,18L14.6,16.6M9.4,16.6L4.8,12L9.4,7.4L8,6L2,12L8,18L9.4,16.6Z"/></svg></div>
+        <div><p class="eyebrow" style="margin:0">程式碼行數</p><p class="val sm" style="margin:4px 0 0">1,482 行</p></div>
+        <p style="margin:0;text-align:right;color:#94A3B8;font-size:12px">只計算來源檔的非空行，不含 bin / obj。</p>
+      </div>
+
+      <div class="note"><svg width="17" height="17" viewBox="0 0 24 24" style="flex:none"><path fill="#3B82F6" d="M13,9H11V7H13M13,17H11V11H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"/></svg><span>已讀取本機帳號登入狀態，12 個帳號可用。</span></div>
+
+      <div class="tbl">
+        <p class="sec">帳號狀態</p>
+        <div class="thead" style="margin-top:11px"><span>帳號</span><span>別名</span><span>點數</span><span>狀態</span></div>
+        <div class="trow"><span>帳號 01</span><span>工作帳號</span><span style="font-weight:600">3,120</span><span class="ok">登入有效，等待執行</span></div>
+        <div class="trow"><span>帳號 02</span><span>備用</span><span style="font-weight:600">2,480</span><span class="ok">登入有效，等待執行</span></div>
+        <div class="trow"><span>帳號 03</span><span>未設定別名</span><span>—</span><span class="off">尚未設定登入狀態</span></div>
+      </div>
+    </section>
+
+    <div class="ptitle" style="margin-top:34px">
+      <div class="badge"><svg width="21" height="21" viewBox="0 0 24 24"><path fill="#2563EB" d="M12,21.5C10.65,20.65 8.2,20 6.5,20C4.85,20 3.15,20.3 1.75,21.05C1.65,21.1 1.6,21.1 1.5,21.1C1.25,21.1 1,20.85 1,20.6V6C1.6,5.55 2.25,5.25 3,5C4.11,4.65 5.33,4.5 6.5,4.5C8.45,4.5 10.55,4.9 12,6C13.45,4.9 15.55,4.5 17.5,4.5C18.67,4.5 19.89,4.65 21,5C21.75,5.25 22.4,5.55 23,6V20.6C23,20.85 22.75,21.1 22.5,21.1C22.4,21.1 22.35,21.1 22.25,21.05C20.85,20.3 19.15,20 17.5,20C15.8,20 13.35,20.65 12,21.5Z"/></svg></div>
+      <h2>GitHub 設定指引</h2>
+    </div>
+    <section class="surface">
+      <p class="sec">設定步驟</p>
+      <div class="steps">
+        <div class="step"><div class="num">1</div><p>在「建立登入狀態」完成登入。</p></div>
+        <div class="step"><div class="num">2</div><p>按「寫入 GitHub Secret」直接存入 Actions Secret；或先複製 Base64，再開啟 Secrets 頁面手動新增。</p></div>
+        <div class="step"><div class="num">3</div><p>Secret 名稱為 LITMEDIA_STORAGE_STATE_BASE64_N。</p></div>
+        <div class="step"><div class="num">4</div><p>在 GitHub Actions 手動執行工作流程，查看最新執行結果。</p></div>
+      </div>
+      <div class="row" style="margin-bottom:0">
+        <button class="btn primary"><svg width="15" height="15" viewBox="0 0 24 24"><path fill="#fff" d="M12,2A10,10 0 0,0 2,12C2,16.42 4.87,20.17 8.84,21.5C9.34,21.58 9.5,21.27 9.5,21C9.5,20.77 9.5,20.14 9.5,19.31C6.73,19.91 6.14,17.97 6.14,17.97C5.68,16.81 5.03,16.5 5.03,16.5C4.12,15.88 5.1,15.9 5.1,15.9C6.1,15.97 6.63,16.93 6.63,16.93C7.5,18.45 8.97,18 9.54,17.76C9.63,17.11 9.89,16.67 10.17,16.42C7.95,16.17 5.62,15.31 5.62,11.5C5.62,10.39 6,9.5 6.65,8.79C6.55,8.54 6.2,7.5 6.75,6.15C6.75,6.15 7.59,5.88 9.5,7.17C10.29,6.95 11.15,6.84 12,6.84C12.85,6.84 13.71,6.95 14.5,7.17C16.41,5.88 17.25,6.15 17.25,6.15C17.8,7.5 17.45,8.54 17.35,8.79C18,9.5 18.38,10.39 18.38,11.5C18.38,15.32 16.04,16.16 13.81,16.41C14.17,16.72 14.5,17.33 14.5,18.26C14.5,19.6 14.5,20.68 14.5,21C14.5,21.27 14.66,21.59 15.17,21.5C19.14,20.16 22,16.42 22,12A10,10 0 0,0 12,2Z"/></svg>開啟 GitHub Actions</button>
+        <button class="btn sec">開啟 Secrets 頁面</button>
+      </div>
+    </section>
+    <div class="note warn"><svg width="18" height="18" viewBox="0 0 24 24" style="flex:none"><path fill="#D97706" d="M13,14H11V9H13M13,18H11V16H13M1,21H23L12,2L1,21Z"/></svg><span>LitMedia 若要求 OTP、CAPTCHA 或其他風險驗證，請在瀏覽器中自行完成後，重新儲存登入狀態。</span></div>
+
+    <div style="margin-top:34px"><code>LITMEDIA_STORAGE_STATE_BASE64_1</code></div>
+  </div></main>
+</div>
+</div>
+</body>
+</html>

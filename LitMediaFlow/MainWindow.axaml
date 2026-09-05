@@ -1,121 +1,622 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="LitMediaFlow.MainWindow"
-        Width="1120" Height="780" MinWidth="900" MinHeight="640"
+        Width="1200" Height="820" MinWidth="980" MinHeight="660"
         Title="LitMedia Flow — 登入狀態擷取器"
-        Background="#F5F7F8">
+        FontFamily="Segoe UI, Microsoft JhengHei UI, Noto Sans TC"
+        Background="#F4F6FB">
+
   <Window.Styles>
-    <Style Selector="TextBlock.page-title"><Setter Property="FontSize" Value="30"/><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="Foreground" Value="#142E38"/></Style>
-    <Style Selector="TextBlock.subtle"><Setter Property="Foreground" Value="#58707A"/><Setter Property="FontSize" Value="14"/></Style>
-    <Style Selector="TextBlock.section-title"><Setter Property="FontSize" Value="20"/><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="Foreground" Value="#142E38"/></Style>
-    <Style Selector="Border.surface"><Setter Property="Background" Value="White"/><Setter Property="CornerRadius" Value="14"/><Setter Property="Padding" Value="26"/></Style>
-    <Style Selector="Button.nav"><Setter Property="Background" Value="Transparent"/><Setter Property="Foreground" Value="#C8DAD8"/><Setter Property="HorizontalAlignment" Value="Stretch"/><Setter Property="HorizontalContentAlignment" Value="Left"/><Setter Property="Padding" Value="13,11"/><Setter Property="CornerRadius" Value="8"/><Setter Property="FontSize" Value="14"/></Style>
-    <Style Selector="Button.nav:pointerover"><Setter Property="Background" Value="#1E5052"/><Setter Property="Foreground" Value="White"/></Style>
-    <Style Selector="Button.nav-active"><Setter Property="Background" Value="#20585A"/><Setter Property="Foreground" Value="White"/><Setter Property="FontWeight" Value="SemiBold"/></Style>
-    <Style Selector="Button.primary"><Setter Property="Background" Value="#087F78"/><Setter Property="Foreground" Value="White"/><Setter Property="Padding" Value="18,11"/><Setter Property="CornerRadius" Value="7"/><Setter Property="FontWeight" Value="SemiBold"/></Style>
-    <Style Selector="Button.primary:pointerover"><Setter Property="Background" Value="#056B66"/></Style>
-    <Style Selector="Button.secondary"><Setter Property="Background" Value="#E7EFEF"/><Setter Property="Foreground" Value="#183941"/><Setter Property="Padding" Value="15,10"/><Setter Property="CornerRadius" Value="7"/></Style>
-    <Style Selector="Button.secondary:pointerover"><Setter Property="Background" Value="#D5E5E4"/></Style>
-    <Style Selector="TextBlock.metric-value"><Setter Property="FontSize" Value="26"/><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="Foreground" Value="#087F78"/></Style>
-    <Style Selector="TextBlock.metric-value-compact"><Setter Property="FontSize" Value="19"/><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="Foreground" Value="#087F78"/></Style>
-    <Style Selector="TextBlock.account-row"><Setter Property="FontSize" Value="14"/><Setter Property="Foreground" Value="#1C3540"/></Style>
+    <!-- ============ 圖示（向量 SVG Path） ============ -->
+    <Style Selector="Path.icon">
+      <Setter Property="Stretch" Value="Uniform"/>
+      <Setter Property="Width" Value="16"/>
+      <Setter Property="Height" Value="16"/>
+      <Setter Property="HorizontalAlignment" Value="Center"/>
+      <Setter Property="VerticalAlignment" Value="Center"/>
+      <Setter Property="Fill" Value="#2563EB"/>
+    </Style>
+    <Style Selector="Path.nav-icon">
+      <Setter Property="Width" Value="18"/>
+      <Setter Property="Height" Value="18"/>
+      <Setter Property="Fill" Value="#93A9C6"/>
+    </Style>
+    <Style Selector="Button.nav-active Path.nav-icon">
+      <Setter Property="Fill" Value="#FFFFFF"/>
+    </Style>
+    <Style Selector="Path.brand-icon">
+      <Setter Property="Width" Value="19"/>
+      <Setter Property="Height" Value="19"/>
+      <Setter Property="Fill" Value="#FFFFFF"/>
+    </Style>
+    <Style Selector="Path.side-icon">
+      <Setter Property="Width" Value="15"/>
+      <Setter Property="Height" Value="15"/>
+      <Setter Property="Fill" Value="#7FA8E8"/>
+    </Style>
+    <Style Selector="Path.page-icon">
+      <Setter Property="Width" Value="21"/>
+      <Setter Property="Height" Value="21"/>
+      <Setter Property="Fill" Value="#2563EB"/>
+    </Style>
+    <Style Selector="Path.note-icon">
+      <Setter Property="Width" Value="17"/>
+      <Setter Property="Height" Value="17"/>
+      <Setter Property="Fill" Value="#3B82F6"/>
+    </Style>
+    <Style Selector="Path.warn-icon">
+      <Setter Property="Width" Value="18"/>
+      <Setter Property="Height" Value="18"/>
+      <Setter Property="Fill" Value="#D97706"/>
+    </Style>
+
+    <!-- ============ 文字 ============ -->
+    <Style Selector="TextBlock.page-title">
+      <Setter Property="FontSize" Value="27"/>
+      <Setter Property="FontWeight" Value="Bold"/>
+      <Setter Property="Foreground" Value="#0F172A"/>
+    </Style>
+    <Style Selector="TextBlock.subtle">
+      <Setter Property="Foreground" Value="#64748B"/>
+      <Setter Property="FontSize" Value="13.5"/>
+      <Setter Property="LineHeight" Value="21"/>
+    </Style>
+    <Style Selector="TextBlock.section-title">
+      <Setter Property="FontSize" Value="17"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="Foreground" Value="#0F172A"/>
+    </Style>
+    <Style Selector="TextBlock.eyebrow">
+      <Setter Property="FontSize" Value="11.5"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="Foreground" Value="#94A3B8"/>
+    </Style>
+    <Style Selector="TextBlock.metric-value">
+      <Setter Property="FontSize" Value="26"/>
+      <Setter Property="FontWeight" Value="Bold"/>
+      <Setter Property="Foreground" Value="#0F172A"/>
+    </Style>
+    <Style Selector="TextBlock.metric-value-compact">
+      <Setter Property="FontSize" Value="17"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="Foreground" Value="#1E293B"/>
+    </Style>
+    <Style Selector="TextBlock.account-row">
+      <Setter Property="FontSize" Value="13.5"/>
+      <Setter Property="Foreground" Value="#334155"/>
+      <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+
+    <!-- ============ 卡片 ============ -->
+    <Style Selector="Border.surface">
+      <Setter Property="Background" Value="#FFFFFF"/>
+      <Setter Property="CornerRadius" Value="16"/>
+      <Setter Property="Padding" Value="26"/>
+      <Setter Property="BorderBrush" Value="#E4E9F2"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="BoxShadow" Value="0 2 10 0 #140F172A"/>
+    </Style>
+    <Style Selector="Border.stat">
+      <Setter Property="Background" Value="#FFFFFF"/>
+      <Setter Property="CornerRadius" Value="14"/>
+      <Setter Property="Padding" Value="16,15"/>
+      <Setter Property="BorderBrush" Value="#E4E9F2"/>
+      <Setter Property="BorderThickness" Value="1"/>
+    </Style>
+    <Style Selector="Border.chip">
+      <Setter Property="Width" Value="30"/>
+      <Setter Property="Height" Value="30"/>
+      <Setter Property="CornerRadius" Value="10"/>
+      <Setter Property="Background" Value="#E8F0FE"/>
+    </Style>
+
+    <!-- ============ 側欄導覽 ============ -->
+    <Style Selector="Button.nav">
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="Foreground" Value="#C3D3E9"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="HorizontalAlignment" Value="Stretch"/>
+      <Setter Property="HorizontalContentAlignment" Value="Left"/>
+      <Setter Property="Padding" Value="13,11"/>
+      <Setter Property="CornerRadius" Value="11"/>
+      <Setter Property="FontSize" Value="13.5"/>
+      <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="Button.nav /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="Transparent"/>
+    </Style>
+    <Style Selector="Button.nav:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="#1B3358"/>
+      <Setter Property="Foreground" Value="#FFFFFF"/>
+    </Style>
+    <Style Selector="Button.nav:pressed /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="#16294A"/>
+    </Style>
+    <Style Selector="Button.nav-active">
+      <Setter Property="Foreground" Value="#FFFFFF"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+    <Style Selector="Button.nav-active /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="#2563EB"/>
+      <Setter Property="Foreground" Value="#FFFFFF"/>
+    </Style>
+    <Style Selector="Button.nav-active:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="#1D4ED8"/>
+      <Setter Property="Foreground" Value="#FFFFFF"/>
+    </Style>
+
+    <!-- ============ 按鈕 ============ -->
+    <Style Selector="Button.primary">
+      <Setter Property="Background" Value="#2563EB"/>
+      <Setter Property="Foreground" Value="#FFFFFF"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="Padding" Value="18,11"/>
+      <Setter Property="CornerRadius" Value="10"/>
+      <Setter Property="FontSize" Value="13.5"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="Button.primary /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="#2563EB"/>
+      <Setter Property="Foreground" Value="#FFFFFF"/>
+    </Style>
+    <Style Selector="Button.primary:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="#1D4ED8"/>
+      <Setter Property="Foreground" Value="#FFFFFF"/>
+    </Style>
+    <Style Selector="Button.primary:pressed /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="#1E40AF"/>
+      <Setter Property="Foreground" Value="#FFFFFF"/>
+    </Style>
+    <Style Selector="Button.primary:disabled /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="#CBD5E1"/>
+      <Setter Property="Foreground" Value="#F8FAFC"/>
+    </Style>
+
+    <Style Selector="Button.secondary">
+      <Setter Property="Background" Value="#FFFFFF"/>
+      <Setter Property="Foreground" Value="#1E293B"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="BorderBrush" Value="#CBD5E1"/>
+      <Setter Property="Padding" Value="16,10"/>
+      <Setter Property="CornerRadius" Value="10"/>
+      <Setter Property="FontSize" Value="13.5"/>
+      <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="Button.secondary /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="#FFFFFF"/>
+      <Setter Property="Foreground" Value="#1E293B"/>
+      <Setter Property="BorderBrush" Value="#CBD5E1"/>
+    </Style>
+    <Style Selector="Button.secondary:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="#F1F5F9"/>
+      <Setter Property="Foreground" Value="#0F172A"/>
+      <Setter Property="BorderBrush" Value="#94A3B8"/>
+    </Style>
+    <Style Selector="Button.secondary:pressed /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="#E2E8F0"/>
+      <Setter Property="Foreground" Value="#0F172A"/>
+    </Style>
+    <Style Selector="Button.secondary:disabled /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="#F1F5F9"/>
+      <Setter Property="Foreground" Value="#94A3B8"/>
+      <Setter Property="BorderBrush" Value="#E2E8F0"/>
+    </Style>
+
+    <!-- ============ 輸入元件 ============ -->
+    <Style Selector="ComboBox">
+      <Setter Property="CornerRadius" Value="10"/>
+      <Setter Property="MinHeight" Value="38"/>
+      <Setter Property="FontSize" Value="13.5"/>
+    </Style>
+    <Style Selector="TextBox">
+      <Setter Property="CornerRadius" Value="10"/>
+      <Setter Property="MinHeight" Value="36"/>
+      <Setter Property="FontSize" Value="13.5"/>
+    </Style>
   </Window.Styles>
 
-  <Grid ColumnDefinitions="244,*">
-    <Border Background="#10383B" Padding="25,26">
+  <Grid ColumnDefinitions="256,*">
+
+    <!-- ==================== 側欄 ==================== -->
+    <Border Padding="20,24">
+      <Border.Background>
+        <LinearGradientBrush StartPoint="0%,0%" EndPoint="0%,100%">
+          <GradientStop Color="#0B1F3A" Offset="0"/>
+          <GradientStop Color="#122E56" Offset="1"/>
+        </LinearGradientBrush>
+      </Border.Background>
+
       <Grid RowDefinitions="Auto,*,Auto">
-        <StackPanel Spacing="7">
-          <TextBlock Text="LitMedia Flow" FontSize="24" FontWeight="Bold" Foreground="White"/>
-          <TextBlock Text="安全登入狀態擷取器" Foreground="#D0E1DF" FontSize="13"/>
-          <TextBlock Text="每日自動簽到（台北時間）&#xA;05:00、14:00、21:00&#xA;各帳號隔離啟動。" Foreground="#A9C5C3" FontSize="12" LineHeight="17"/>
+
+        <StackPanel Spacing="18">
+          <StackPanel Orientation="Horizontal" Spacing="12">
+            <Border Width="42" Height="42" CornerRadius="13">
+              <Border.Background>
+                <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+                  <GradientStop Color="#60A5FA" Offset="0"/>
+                  <GradientStop Color="#2563EB" Offset="1"/>
+                </LinearGradientBrush>
+              </Border.Background>
+              <Path Classes="icon brand-icon" Data="M10,16.5L16,12L10,7.5V16.5M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2Z"/>
+            </Border>
+            <StackPanel VerticalAlignment="Center" Spacing="2">
+              <TextBlock Text="LitMedia Flow" FontSize="17" FontWeight="Bold" Foreground="#FFFFFF"/>
+              <TextBlock Text="自動簽到控制台" FontSize="11.5" Foreground="#8FA9CC"/>
+            </StackPanel>
+          </StackPanel>
+
+          <Border Background="#14FFFFFF" CornerRadius="12" Padding="14,12" BorderBrush="#1FFFFFFF" BorderThickness="1">
+            <StackPanel Spacing="8">
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <Path Classes="icon side-icon" Data="M12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22C6.47,22 2,17.5 2,12A10,10 0 0,1 12,2M12.5,7V12.25L17,14.92L16.25,16.15L11,13V7H12.5Z"/>
+                <TextBlock Text="每日排程" Foreground="#DCE8F8" FontSize="12.5" FontWeight="SemiBold" VerticalAlignment="Center"/>
+              </StackPanel>
+              <TextBlock Text="05:00 · 14:00 · 21:00" Foreground="#FFFFFF" FontSize="14" FontWeight="SemiBold"/>
+              <TextBlock Text="台北時間，各帳號隔離啟動" Foreground="#8FA9CC" FontSize="11.5" TextWrapping="Wrap"/>
+            </StackPanel>
+          </Border>
         </StackPanel>
 
-        <StackPanel Grid.Row="1" Margin="0,34,0,0" Spacing="5" VerticalAlignment="Top">
-          <TextBlock Text="主要功能" Foreground="#A9C5C3" FontSize="12" FontWeight="SemiBold" Margin="12,0,0,4"/>
-          <Button x:Name="DashboardNavButton" Classes="nav nav-active" Click="DashboardNav_OnClick">GitHub Actions 儀表板</Button>
-          <Button x:Name="LoginNavButton" Classes="nav" Click="LoginNav_OnClick">建立登入狀態</Button>
-          <Button x:Name="AccountsNavButton" Classes="nav" Click="AccountsNav_OnClick">帳號設定</Button>
-          <Button x:Name="GuideNavButton" Classes="nav" Click="GuideNav_OnClick">GitHub 設定指引</Button>
+        <StackPanel Grid.Row="1" Margin="0,28,0,0" Spacing="4" VerticalAlignment="Top">
+          <TextBlock Text="主要功能" Foreground="#7189AD" FontSize="11" FontWeight="SemiBold" Margin="13,0,0,8"/>
+
+          <Button x:Name="DashboardNavButton" Classes="nav nav-active" Click="DashboardNav_OnClick">
+            <StackPanel Orientation="Horizontal" Spacing="11">
+              <Path Classes="icon nav-icon" Data="M3,13H11V3H3V13M3,21H11V15H3V21M13,21H21V11H13V21M13,3V9H21V3H13Z"/>
+              <TextBlock Text="儀表板" VerticalAlignment="Center"/>
+            </StackPanel>
+          </Button>
+
+          <Button x:Name="LoginNavButton" Classes="nav" Click="LoginNav_OnClick">
+            <StackPanel Orientation="Horizontal" Spacing="11">
+              <Path Classes="icon nav-icon" Data="M7,14A2,2 0 0,1 5,12A2,2 0 0,1 7,10A2,2 0 0,1 9,12A2,2 0 0,1 7,14M12.65,10C11.83,7.67 9.61,6 7,6A6,6 0 0,0 1,12A6,6 0 0,0 7,18C9.61,18 11.83,16.33 12.65,14H17V18H21V14H23V10H12.65Z"/>
+              <TextBlock Text="建立登入狀態" VerticalAlignment="Center"/>
+            </StackPanel>
+          </Button>
+
+          <Button x:Name="AccountsNavButton" Classes="nav" Click="AccountsNav_OnClick">
+            <StackPanel Orientation="Horizontal" Spacing="11">
+              <Path Classes="icon nav-icon" Data="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z"/>
+              <TextBlock Text="帳號設定" VerticalAlignment="Center"/>
+            </StackPanel>
+          </Button>
+
+          <Button x:Name="GuideNavButton" Classes="nav" Click="GuideNav_OnClick">
+            <StackPanel Orientation="Horizontal" Spacing="11">
+              <Path Classes="icon nav-icon" Data="M12,21.5C10.65,20.65 8.2,20 6.5,20C4.85,20 3.15,20.3 1.75,21.05C1.65,21.1 1.6,21.1 1.5,21.1C1.25,21.1 1,20.85 1,20.6V6C1.6,5.55 2.25,5.25 3,5C4.11,4.65 5.33,4.5 6.5,4.5C8.45,4.5 10.55,4.9 12,6C13.45,4.9 15.55,4.5 17.5,4.5C18.67,4.5 19.89,4.65 21,5C21.75,5.25 22.4,5.55 23,6V20.6C23,20.85 22.75,21.1 22.5,21.1C22.4,21.1 22.35,21.1 22.25,21.05C20.85,20.3 19.15,20 17.5,20C15.8,20 13.35,20.65 12,21.5Z"/>
+              <TextBlock Text="GitHub 設定指引" VerticalAlignment="Center"/>
+            </StackPanel>
+          </Button>
         </StackPanel>
 
-        <Border Grid.Row="2" Background="#1C5354" CornerRadius="10" Padding="14">
-          <StackPanel Spacing="6">
-            <TextBlock Text="不會儲存帳密" Foreground="White" FontWeight="SemiBold" FontSize="13"/>
-            <TextBlock Text="只會把已登入的瀏覽器狀態複製到剪貼簿，供你自行存入 GitHub Secrets。" TextWrapping="Wrap" Foreground="#CDE1DF" FontSize="12" LineHeight="17"/>
+        <Border Grid.Row="2" Background="#14FFFFFF" CornerRadius="12" Padding="14" BorderBrush="#1FFFFFFF" BorderThickness="1">
+          <StackPanel Spacing="8">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <Path Classes="icon side-icon" Data="M12,17A2,2 0 0,0 14,15C14,13.89 13.1,13 12,13A2,2 0 0,0 10,15A2,2 0 0,0 12,17M18,8A2,2 0 0,1 20,10V20A2,2 0 0,1 18,22H6A2,2 0 0,1 4,20V10C4,8.89 4.9,8 6,8H7V6A5,5 0 0,1 12,1A5,5 0 0,1 17,6V8H18M12,3A3,3 0 0,0 9,6V8H15V6A3,3 0 0,0 12,3Z"/>
+              <TextBlock Text="不會儲存帳密" Foreground="#FFFFFF" FontWeight="SemiBold" FontSize="12.5" VerticalAlignment="Center"/>
+            </StackPanel>
+            <TextBlock Text="只會把已登入的瀏覽器狀態複製到剪貼簿，供你自行存入 GitHub Secrets。" TextWrapping="Wrap" Foreground="#9DB5D4" FontSize="11.5" LineHeight="17"/>
           </StackPanel>
         </Border>
       </Grid>
     </Border>
 
+    <!-- ==================== 內容區 ==================== -->
     <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-      <StackPanel Margin="48,40,48,34" MaxWidth="760" Spacing="22">
+      <StackPanel Margin="44,38,44,36" MaxWidth="880" HorizontalAlignment="Left" Spacing="22">
+
+        <!-- 儀表板 -->
         <StackPanel x:Name="DashboardView" Spacing="20">
-          <StackPanel Spacing="6">
-            <TextBlock Text="GitHub Actions 儀表板" Classes="page-title"/>
+          <StackPanel Spacing="8">
+            <StackPanel Orientation="Horizontal" Spacing="13">
+              <Border Width="44" Height="44" CornerRadius="14" Background="#E4EDFD">
+                <Path Classes="icon page-icon" Data="M3,13H11V3H3V13M3,21H11V15H3V21M13,21H21V11H13V21M13,3V9H21V3H13Z"/>
+              </Border>
+              <TextBlock Text="GitHub Actions 儀表板" Classes="page-title" VerticalAlignment="Center"/>
+            </StackPanel>
             <TextBlock Text="手動執行每日簽到、查看本機帳號登入狀態與 GitHub Actions 設定。" Classes="subtle" TextWrapping="Wrap"/>
           </StackPanel>
+
           <Border Classes="surface">
-            <StackPanel Spacing="21">
-              <StackPanel Spacing="6">
-                <TextBlock Text="每日簽到狀態" Classes="section-title"/>
-                <TextBlock Text="從此電腦啟動既有的檢查流程；GitHub Actions 的最新結果請於 GitHub 網頁查看。" Classes="subtle" TextWrapping="Wrap"/>
-              </StackPanel>
+            <StackPanel Spacing="22">
+
+              <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
+                <StackPanel Spacing="5">
+                  <TextBlock Text="每日簽到狀態" Classes="section-title"/>
+                  <TextBlock Text="從此電腦啟動既有的檢查流程；GitHub Actions 的最新結果請於 GitHub 網頁查看。" Classes="subtle" TextWrapping="Wrap"/>
+                </StackPanel>
+              </Grid>
+
               <StackPanel Orientation="Horizontal" Spacing="11">
-                <Button x:Name="RunCheckinButton" Classes="primary" Click="RunCheckinButton_OnClick">手動觸發每日簽到</Button>
-                <Button x:Name="RefreshDashboardButton" Classes="secondary" Click="RefreshDashboardButton_OnClick">更新執行結果</Button>
-              </StackPanel>
-              <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="18">
-                <StackPanel Spacing="3"><TextBlock Text="已設定帳號" Classes="subtle" FontSize="12"/><TextBlock x:Name="ConfiguredAccountsText" Text="0 個" Classes="metric-value"/></StackPanel>
-                <StackPanel Grid.Column="1" Spacing="3"><TextBlock Text="回報連續天數帳號" Classes="subtle" FontSize="12"/><TextBlock x:Name="StreakTotalText" Text="—" Classes="metric-value"/></StackPanel>
-                <StackPanel Grid.Column="2" Spacing="3"><TextBlock Text="剩餘點數合計" Classes="subtle" FontSize="12"/><TextBlock x:Name="PointsTotalText" Text="—" Classes="metric-value-compact"/></StackPanel>
-                <StackPanel Grid.Column="3" Spacing="3"><TextBlock Text="最近執行" Classes="subtle" FontSize="12"/><TextBlock x:Name="CheckinStatusText" Text="尚未更新" Classes="metric-value" FontSize="19"/></StackPanel>
-              </Grid>
-              <Grid ColumnDefinitions="*,*,*" ColumnSpacing="24">
-                <StackPanel Spacing="3"><TextBlock Text="上次成功" Classes="subtle" FontSize="12"/><TextBlock x:Name="LastSuccessText" Text="—" Classes="metric-value-compact"/></StackPanel>
-                <StackPanel Grid.Column="1" Spacing="3"><TextBlock Text="上次失敗" Classes="subtle" FontSize="12"/><TextBlock x:Name="LastFailureText" Text="—" Classes="metric-value-compact"/></StackPanel>
-                <StackPanel Grid.Column="2" Spacing="3"><TextBlock Text="連續成功天數" Classes="subtle" FontSize="12"/><TextBlock x:Name="ConsecutiveSuccessDaysText" Text="—" Classes="metric-value-compact"/></StackPanel>
-              </Grid>
-              <Border Background="#EEF4F4" CornerRadius="8" Padding="13,10">
-                <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
-                  <StackPanel Spacing="3">
-                    <TextBlock Text="程式碼行數" Classes="subtle" FontSize="12"/>
-                    <TextBlock x:Name="CodeLineCountText" Text="—" Classes="metric-value-compact"/>
+                <Button x:Name="RunCheckinButton" Classes="primary" Click="RunCheckinButton_OnClick">
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Path Classes="icon" Fill="#FFFFFF" Width="15" Height="15" Data="M8,5.14V19.14L19,12.14L8,5.14Z"/>
+                    <TextBlock Text="手動觸發每日簽到" VerticalAlignment="Center"/>
                   </StackPanel>
-                  <TextBlock Grid.Column="1" VerticalAlignment="Center" Foreground="#34535A" Text="只計算來源檔的非空行，不含 bin / obj。" TextWrapping="Wrap"/>
+                </Button>
+                <Button x:Name="RefreshDashboardButton" Classes="secondary" Click="RefreshDashboardButton_OnClick">
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Path Classes="icon" Fill="#475569" Width="15" Height="15" Data="M17.65,6.35C16.2,4.9 14.21,4 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20C15.73,20 18.84,17.45 19.73,14H17.65C16.83,16.33 14.61,18 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6C13.66,6 15.14,6.69 16.22,7.78L13,11H20V4L17.65,6.35Z"/>
+                    <TextBlock Text="更新執行結果" VerticalAlignment="Center"/>
+                  </StackPanel>
+                </Button>
+              </StackPanel>
+
+              <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="12">
+                <Border Classes="stat">
+                  <StackPanel Spacing="11">
+                    <StackPanel Orientation="Horizontal" Spacing="9">
+                      <Border Classes="chip" Background="#E4EDFD">
+                        <Path Classes="icon" Fill="#2563EB" Width="15" Height="15" Data="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z"/>
+                      </Border>
+                      <TextBlock Text="已設定帳號" Classes="eyebrow" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <TextBlock x:Name="ConfiguredAccountsText" Text="0 個" Classes="metric-value"/>
+                  </StackPanel>
+                </Border>
+
+                <Border Grid.Column="1" Classes="stat">
+                  <StackPanel Spacing="11">
+                    <StackPanel Orientation="Horizontal" Spacing="9">
+                      <Border Classes="chip" Background="#FFEDD5">
+                        <Path Classes="icon" Fill="#EA580C" Width="15" Height="15" Data="M17.66,11.2C17.43,10.9 17.15,10.64 16.89,10.38C16.22,9.78 15.46,9.35 14.82,8.72C13.33,7.26 13,4.85 13.95,3C13,3.23 12.17,3.75 11.46,4.32C8.87,6.4 7.85,10.07 9.07,13.22C9.11,13.32 9.15,13.42 9.15,13.55C9.15,13.77 9,13.97 8.8,14.05C8.57,14.15 8.33,14.09 8.14,13.93C8.08,13.88 8.04,13.83 8,13.76C6.87,12.33 6.69,10.28 7.45,8.64C5.78,10 4.87,12.3 5,14.47C5.06,14.97 5.12,15.47 5.29,15.97C5.43,16.57 5.7,17.17 6,17.7C7.08,19.43 8.95,20.67 10.96,20.92C13.1,21.19 15.39,20.8 17.03,19.32C18.86,17.66 19.5,15 18.56,12.72L18.43,12.46C18.22,12 17.66,11.2 17.66,11.2Z"/>
+                      </Border>
+                      <TextBlock Text="回報連續天數" Classes="eyebrow" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <TextBlock x:Name="StreakTotalText" Text="—" Classes="metric-value"/>
+                  </StackPanel>
+                </Border>
+
+                <Border Grid.Column="2" Classes="stat">
+                  <StackPanel Spacing="11">
+                    <StackPanel Orientation="Horizontal" Spacing="9">
+                      <Border Classes="chip" Background="#DCFCE7">
+                        <Path Classes="icon" Fill="#16A34A" Width="15" Height="15" Data="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12.88,17.76V19H11.13V17.79C10.31,17.68 8.83,17.29 8.5,15.24H10.06C10.15,15.87 10.5,16.55 11.94,16.55C13.5,16.55 13.85,15.83 13.85,15.29C13.85,14.56 13.44,13.88 11.64,13.45C9.63,12.96 8.26,12.14 8.26,10.5C8.26,9.09 9.39,8.18 10.79,7.88V6.5H12.54V7.9C14.16,8.28 14.79,9.5 14.84,10.78H13.28C13.24,10 12.86,9.4 11.66,9.4C10.5,9.4 9.83,9.91 9.83,10.63C9.83,11.26 10.31,11.68 12.03,12.12C13.75,12.56 15.42,13.29 15.42,15.28C15.4,16.78 14.28,17.6 12.88,17.76Z"/>
+                      </Border>
+                      <TextBlock Text="剩餘點數合計" Classes="eyebrow" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <TextBlock x:Name="PointsTotalText" Text="—" Classes="metric-value"/>
+                  </StackPanel>
+                </Border>
+
+                <Border Grid.Column="3" Classes="stat">
+                  <StackPanel Spacing="11">
+                    <StackPanel Orientation="Horizontal" Spacing="9">
+                      <Border Classes="chip" Background="#EDE9FE">
+                        <Path Classes="icon" Fill="#7C3AED" Width="15" Height="15" Data="M12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22C6.47,22 2,17.5 2,12A10,10 0 0,1 12,2M12.5,7V12.25L17,14.92L16.25,16.15L11,13V7H12.5Z"/>
+                      </Border>
+                      <TextBlock Text="最近執行" Classes="eyebrow" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <TextBlock x:Name="CheckinStatusText" Text="尚未更新" Classes="metric-value-compact" FontSize="19"/>
+                  </StackPanel>
+                </Border>
+              </Grid>
+
+              <Border Background="#F8FAFC" CornerRadius="14" Padding="18,16" BorderBrush="#E9EDF4" BorderThickness="1">
+                <Grid ColumnDefinitions="*,*,*" ColumnSpacing="18">
+                  <StackPanel Spacing="5">
+                    <TextBlock Text="上次成功" Classes="eyebrow"/>
+                    <TextBlock x:Name="LastSuccessText" Text="—" Classes="metric-value-compact"/>
+                  </StackPanel>
+                  <StackPanel Grid.Column="1" Spacing="5">
+                    <TextBlock Text="上次失敗" Classes="eyebrow"/>
+                    <TextBlock x:Name="LastFailureText" Text="—" Classes="metric-value-compact"/>
+                  </StackPanel>
+                  <StackPanel Grid.Column="2" Spacing="5">
+                    <TextBlock Text="連續成功天數" Classes="eyebrow"/>
+                    <TextBlock x:Name="ConsecutiveSuccessDaysText" Text="—" Classes="metric-value-compact"/>
+                  </StackPanel>
                 </Grid>
               </Border>
-              <Border Background="#EEF4F4" CornerRadius="8" Padding="13,10">
-                <TextBlock x:Name="DashboardStatusText" Text="正在讀取本機帳號登入狀態。" Foreground="#34535A" TextWrapping="Wrap"/>
+
+              <Border Background="#F8FAFC" CornerRadius="14" Padding="18,14" BorderBrush="#E9EDF4" BorderThickness="1">
+                <Grid ColumnDefinitions="Auto,Auto,*" ColumnSpacing="12">
+                  <Border Classes="chip" Background="#E2E8F0" VerticalAlignment="Center">
+                    <Path Classes="icon" Fill="#475569" Width="15" Height="15" Data="M14.6,16.6L19.2,12L14.6,7.4L16,6L22,12L16,18L14.6,16.6M9.4,16.6L4.8,12L9.4,7.4L8,6L2,12L8,18L9.4,16.6Z"/>
+                  </Border>
+                  <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
+                    <TextBlock Text="程式碼行數" Classes="eyebrow"/>
+                    <TextBlock x:Name="CodeLineCountText" Text="—" Classes="metric-value-compact"/>
+                  </StackPanel>
+                  <TextBlock Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Right" Foreground="#94A3B8" FontSize="12" Text="只計算來源檔的非空行，不含 bin / obj。" TextWrapping="Wrap"/>
+                </Grid>
               </Border>
-              <StackPanel Spacing="9">
-                <TextBlock Text="帳號狀態" FontSize="16" FontWeight="SemiBold" Foreground="#1C3540"/>
-                <ScrollViewer MaxHeight="300" VerticalScrollBarVisibility="Auto">
-                  <StackPanel x:Name="DashboardAccountsPanel" Spacing="7"/>
+
+              <Border Background="#EFF6FF" CornerRadius="12" Padding="15,13" BorderBrush="#BFDBFE" BorderThickness="1">
+                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="11">
+                  <Path Classes="icon note-icon" VerticalAlignment="Top" Margin="0,1,0,0" Data="M13,9H11V7H13M13,17H11V11H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"/>
+                  <TextBlock Grid.Column="1" x:Name="DashboardStatusText" Text="正在讀取本機帳號登入狀態。" Foreground="#1E40AF" FontSize="13" LineHeight="20" TextWrapping="Wrap"/>
+                </Grid>
+              </Border>
+
+              <StackPanel Spacing="11">
+                <TextBlock Text="帳號狀態" Classes="section-title"/>
+                <ScrollViewer MaxHeight="320" VerticalScrollBarVisibility="Auto">
+                  <StackPanel x:Name="DashboardAccountsPanel" Spacing="6"/>
                 </ScrollViewer>
               </StackPanel>
             </StackPanel>
           </Border>
         </StackPanel>
 
+        <!-- 建立登入狀態 -->
         <StackPanel x:Name="LoginView" IsVisible="False" Spacing="20">
-          <StackPanel Spacing="6"><TextBlock Text="建立登入狀態" Classes="page-title"/><TextBlock Text="選擇帳號與瀏覽器後完成人工登入，再把對應的 Base64 值存入 GitHub Secret。預設 Chromium；Firefox / Edge 為備案。" Classes="subtle" TextWrapping="Wrap"/></StackPanel>
-          <Border Classes="surface"><StackPanel Spacing="15"><TextBlock Text="選擇帳號" Classes="section-title"/><StackPanel Orientation="Horizontal" Spacing="12"><ComboBox x:Name="AccountComboBox" Width="160" SelectedIndex="0"/><TextBlock x:Name="AliasText" Classes="subtle" VerticalAlignment="Center"/></StackPanel><Border Background="#E7F3F1" CornerRadius="7" Padding="12,8" HorizontalAlignment="Left"><TextBlock x:Name="SecretNameText" Foreground="#056B66" FontFamily="Consolas"/></Border></StackPanel></Border>
-          <Border Classes="surface"><StackPanel Spacing="12"><TextBlock Text="瀏覽器" Classes="section-title"/><TextBlock Text="登入與簽到請使用同一瀏覽器。Chromium 為預設；若登入或驗證異常，可改選 Firefox 或 Edge 備案後重新保存登入狀態。" Classes="subtle" TextWrapping="Wrap"/><ComboBox x:Name="BrowserComboBox" Width="280" SelectedIndex="0"/><TextBlock x:Name="BrowserHintText" Classes="subtle" TextWrapping="Wrap"/></StackPanel></Border>
-          <Border Classes="surface"><StackPanel Spacing="12"><TextBlock Text="開啟登入流程" Classes="section-title"/><TextBlock x:Name="LoginFlowHintText" Text="程式會開啟既有的 Playwright 登入流程。請自行完成密碼、OTP、CAPTCHA 或任何帳號驗證，並在終端機按 Enter 儲存登入狀態。" Classes="subtle" TextWrapping="Wrap"/><Button x:Name="RunLoginButton" Classes="primary" Click="RunLoginButton_OnClick" HorizontalAlignment="Left">開啟登入流程</Button></StackPanel></Border>
-          <Border Classes="surface"><StackPanel Spacing="12"><TextBlock Text="複製 GitHub Secret" Classes="section-title"/><TextBlock x:Name="StateDescription" Classes="subtle" TextWrapping="Wrap"/><StackPanel Orientation="Horizontal" Spacing="10"><Button x:Name="CopyStateButton" Classes="primary" IsEnabled="False" Click="CopyStateButton_OnClick">複製 Base64</Button><Button x:Name="CopySecretButton" Classes="secondary" IsEnabled="False" Click="CopySecretButton_OnClick">複製 Secret 名稱</Button></StackPanel><StackPanel Orientation="Horizontal" Spacing="10"><Button x:Name="UploadSecretButton" Classes="primary" IsEnabled="False" Click="UploadSecretButton_OnClick">寫入 GitHub Secret</Button><Button x:Name="OpenSecretsButton" Classes="secondary" Click="OpenSecretsButton_OnClick">開啟 Secrets 頁面</Button></StackPanel><TextBlock Classes="subtle" TextWrapping="Wrap" Text="寫入 GitHub Secret 會透過本機已登入的 GitHub CLI，把 Base64 存成 Actions Secret。若要手動貼上，請先複製 Base64，再開啟 Secrets 頁面。"/></StackPanel></Border>
-          <Border Background="#EAF0F1" CornerRadius="8" Padding="14"><TextBlock x:Name="StatusText" Foreground="#29464B" Text="請先選擇帳號。" TextWrapping="Wrap"/></Border>
+          <StackPanel Spacing="8">
+            <StackPanel Orientation="Horizontal" Spacing="13">
+              <Border Width="44" Height="44" CornerRadius="14" Background="#E4EDFD">
+                <Path Classes="icon page-icon" Data="M7,14A2,2 0 0,1 5,12A2,2 0 0,1 7,10A2,2 0 0,1 9,12A2,2 0 0,1 7,14M12.65,10C11.83,7.67 9.61,6 7,6A6,6 0 0,0 1,12A6,6 0 0,0 7,18C9.61,18 11.83,16.33 12.65,14H17V18H21V14H23V10H12.65Z"/>
+              </Border>
+              <TextBlock Text="建立登入狀態" Classes="page-title" VerticalAlignment="Center"/>
+            </StackPanel>
+            <TextBlock Text="選擇帳號與瀏覽器後完成人工登入，再把對應的 Base64 值存入 GitHub Secret。預設 Chromium；Firefox / Edge 為備案。" Classes="subtle" TextWrapping="Wrap"/>
+          </StackPanel>
+
+          <Border Classes="surface">
+            <StackPanel Spacing="16">
+              <StackPanel Orientation="Horizontal" Spacing="10">
+                <Border Classes="chip" Background="#E4EDFD">
+                  <Path Classes="icon" Fill="#2563EB" Width="15" Height="15" Data="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z"/>
+                </Border>
+                <TextBlock Text="步驟 1 · 選擇帳號" Classes="section-title" VerticalAlignment="Center"/>
+              </StackPanel>
+              <StackPanel Orientation="Horizontal" Spacing="12">
+                <ComboBox x:Name="AccountComboBox" Width="170" SelectedIndex="0"/>
+                <TextBlock x:Name="AliasText" Classes="subtle" VerticalAlignment="Center"/>
+              </StackPanel>
+              <Border Background="#F1F5F9" CornerRadius="10" Padding="13,9" HorizontalAlignment="Left" BorderBrush="#E2E8F0" BorderThickness="1">
+                <TextBlock x:Name="SecretNameText" Foreground="#1D4ED8" FontFamily="Consolas, Courier New" FontSize="13"/>
+              </Border>
+            </StackPanel>
+          </Border>
+
+          <Border Classes="surface">
+            <StackPanel Spacing="14">
+              <StackPanel Orientation="Horizontal" Spacing="10">
+                <Border Classes="chip" Background="#E4EDFD">
+                  <Path Classes="icon" Fill="#2563EB" Width="15" Height="15" Data="M12,2C6.47,2 2,6.5 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4.03C12.83,5.23 13.5,6.57 13.91,8H10.09C10.5,6.57 11.17,5.23 12,4.03M9.4,4.44C8.8,5.55 8.35,6.75 8,8H5.08C6.03,6.34 7.57,5.06 9.4,4.44M4.26,10H7.64C7.56,10.66 7.5,11.32 7.5,12C7.5,12.68 7.56,13.34 7.64,14H4.26C4.1,13.36 4,12.69 4,12C4,11.31 4.1,10.64 4.26,10M5.08,16H8C8.35,17.25 8.8,18.45 9.4,19.56C7.57,18.93 6.03,17.65 5.08,16M9.66,14C9.56,13.34 9.5,12.68 9.5,12C9.5,11.32 9.56,10.65 9.66,10H14.34C14.43,10.65 14.5,11.32 14.5,12C14.5,12.68 14.43,13.34 14.34,14H9.66M12,19.96C11.17,18.76 10.5,17.43 10.09,16H13.91C13.5,17.43 12.83,18.76 12,19.96M14.59,19.56C15.19,18.45 15.65,17.25 15.97,16H18.92C17.96,17.65 16.43,18.93 14.59,19.56M16.36,14C16.44,13.34 16.5,12.68 16.5,12C16.5,11.32 16.44,10.66 16.36,10H19.74C19.9,10.64 20,11.31 20,12C20,12.69 19.9,13.36 19.74,14H16.36M15.97,8C15.65,6.75 15.19,5.55 14.59,4.44C16.43,5.07 17.96,6.34 18.92,8H15.97Z"/>
+                </Border>
+                <TextBlock Text="步驟 2 · 選擇瀏覽器" Classes="section-title" VerticalAlignment="Center"/>
+              </StackPanel>
+              <TextBlock Text="登入與簽到請使用同一瀏覽器。Chromium 為預設；若登入或驗證異常，可改選 Firefox 或 Edge 備案後重新保存登入狀態。" Classes="subtle" TextWrapping="Wrap"/>
+              <ComboBox x:Name="BrowserComboBox" Width="300" SelectedIndex="0"/>
+              <TextBlock x:Name="BrowserHintText" Classes="subtle" TextWrapping="Wrap"/>
+            </StackPanel>
+          </Border>
+
+          <Border Classes="surface">
+            <StackPanel Spacing="14">
+              <StackPanel Orientation="Horizontal" Spacing="10">
+                <Border Classes="chip" Background="#E4EDFD">
+                  <Path Classes="icon" Fill="#2563EB" Width="15" Height="15" Data="M8,5.14V19.14L19,12.14L8,5.14Z"/>
+                </Border>
+                <TextBlock Text="步驟 3 · 開啟登入流程" Classes="section-title" VerticalAlignment="Center"/>
+              </StackPanel>
+              <TextBlock x:Name="LoginFlowHintText" Text="程式會開啟既有的 Playwright 登入流程。請自行完成密碼、OTP、CAPTCHA 或任何帳號驗證，並在終端機按 Enter 儲存登入狀態。" Classes="subtle" TextWrapping="Wrap"/>
+              <Button x:Name="RunLoginButton" Classes="primary" Click="RunLoginButton_OnClick" HorizontalAlignment="Left">開啟登入流程</Button>
+            </StackPanel>
+          </Border>
+
+          <Border Classes="surface">
+            <StackPanel Spacing="14">
+              <StackPanel Orientation="Horizontal" Spacing="10">
+                <Border Classes="chip" Background="#E4EDFD">
+                  <Path Classes="icon" Fill="#2563EB" Width="15" Height="15" Data="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"/>
+                </Border>
+                <TextBlock Text="步驟 4 · 複製 GitHub Secret" Classes="section-title" VerticalAlignment="Center"/>
+              </StackPanel>
+              <TextBlock x:Name="StateDescription" Classes="subtle" TextWrapping="Wrap"/>
+              <StackPanel Orientation="Horizontal" Spacing="10">
+                <Button x:Name="UploadSecretButton" Classes="primary" IsEnabled="False" Click="UploadSecretButton_OnClick">
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Path Classes="icon" Fill="#FFFFFF" Width="15" Height="15" Data="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20M12,19L8,15H10.5V12H13.5V15H16L12,19Z"/>
+                    <TextBlock Text="寫入 GitHub Secret" VerticalAlignment="Center"/>
+                  </StackPanel>
+                </Button>
+                <Button x:Name="OpenSecretsButton" Classes="secondary" Click="OpenSecretsButton_OnClick">開啟 Secrets 頁面</Button>
+              </StackPanel>
+              <StackPanel Orientation="Horizontal" Spacing="10">
+                <Button x:Name="CopyStateButton" Classes="secondary" IsEnabled="False" Click="CopyStateButton_OnClick">複製 Base64</Button>
+                <Button x:Name="CopySecretButton" Classes="secondary" IsEnabled="False" Click="CopySecretButton_OnClick">複製 Secret 名稱</Button>
+              </StackPanel>
+              <TextBlock Classes="subtle" TextWrapping="Wrap" Text="「寫入 GitHub Secret」會透過本機已登入的 GitHub CLI，把 Base64 存成 Actions Secret。若要手動貼上，請先複製 Base64，再開啟 Secrets 頁面。"/>
+            </StackPanel>
+          </Border>
+
+          <Border Background="#EFF6FF" CornerRadius="12" Padding="15,13" BorderBrush="#BFDBFE" BorderThickness="1">
+            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="11">
+              <Path Classes="icon note-icon" VerticalAlignment="Top" Margin="0,1,0,0" Data="M13,9H11V7H13M13,17H11V11H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"/>
+              <TextBlock Grid.Column="1" x:Name="StatusText" Foreground="#1E40AF" FontSize="13" LineHeight="20" Text="請先選擇帳號。" TextWrapping="Wrap"/>
+            </Grid>
+          </Border>
         </StackPanel>
 
+        <!-- 帳號設定 -->
         <StackPanel x:Name="AccountsView" IsVisible="False" Spacing="20">
-          <StackPanel Spacing="6"><TextBlock Text="帳號設定" Classes="page-title"/><TextBlock Text="為每個帳號設定便於辨識的別名；別名只儲存在這台電腦。" Classes="subtle" TextWrapping="Wrap"/></StackPanel>
-          <Border Classes="surface"><StackPanel Spacing="14"><TextBlock Text="帳號 1 至 33" Classes="section-title"/><ScrollViewer MaxHeight="430" VerticalScrollBarVisibility="Auto"><StackPanel x:Name="AliasListPanel" Spacing="8"/></ScrollViewer><Button Classes="primary" HorizontalAlignment="Left" Click="SaveAliasesButton_OnClick">儲存帳號設定</Button></StackPanel></Border>
+          <StackPanel Spacing="8">
+            <StackPanel Orientation="Horizontal" Spacing="13">
+              <Border Width="44" Height="44" CornerRadius="14" Background="#E4EDFD">
+                <Path Classes="icon page-icon" Data="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z"/>
+              </Border>
+              <TextBlock Text="帳號設定" Classes="page-title" VerticalAlignment="Center"/>
+            </StackPanel>
+            <TextBlock Text="為每個帳號設定便於辨識的別名；別名只儲存在這台電腦。" Classes="subtle" TextWrapping="Wrap"/>
+          </StackPanel>
+
+          <Border Classes="surface">
+            <StackPanel Spacing="16">
+              <TextBlock Text="帳號 1 至 33" Classes="section-title"/>
+              <Border Background="#F8FAFC" CornerRadius="12" Padding="14" BorderBrush="#E9EDF4" BorderThickness="1">
+                <ScrollViewer MaxHeight="420" VerticalScrollBarVisibility="Auto">
+                  <StackPanel x:Name="AliasListPanel" Spacing="8"/>
+                </ScrollViewer>
+              </Border>
+              <Button Classes="primary" HorizontalAlignment="Left" Click="SaveAliasesButton_OnClick">儲存帳號設定</Button>
+            </StackPanel>
+          </Border>
         </StackPanel>
 
+        <!-- GitHub 設定指引 -->
         <StackPanel x:Name="GuideView" IsVisible="False" Spacing="20">
-          <StackPanel Spacing="6"><TextBlock Text="GitHub 設定指引" Classes="page-title"/><TextBlock Text="把已登入的瀏覽器狀態安全存成 GitHub Actions Secret，讓每日簽到使用。" Classes="subtle" TextWrapping="Wrap"/></StackPanel>
-          <Border Classes="surface"><StackPanel Spacing="13"><TextBlock Text="設定步驟" Classes="section-title"/><TextBlock Text="1. 在「建立登入狀態」完成登入。&#xA;2. 按「寫入 GitHub Secret」直接存入 Actions Secret；或先複製 Base64，再開啟 Secrets 頁面手動新增。&#xA;3. Secret 名稱為 LITMEDIA_STORAGE_STATE_BASE64_N。&#xA;4. 在 GitHub Actions 手動執行工作流程，查看最新執行結果。" TextWrapping="Wrap" LineHeight="25" Foreground="#2D4750"/><StackPanel Orientation="Horizontal" Spacing="10"><Button Classes="primary" HorizontalAlignment="Left" Click="OpenActionsButton_OnClick">開啟 GitHub Actions</Button><Button Classes="secondary" HorizontalAlignment="Left" Click="OpenSecretsButton_OnClick">開啟 Secrets 頁面</Button></StackPanel></StackPanel></Border>
-          <Border Background="#FFF4E5" CornerRadius="8" Padding="14"><TextBlock Foreground="#714D16" Text="LitMedia 若要求 OTP、CAPTCHA 或其他風險驗證，請在瀏覽器中自行完成後，重新儲存登入狀態。" TextWrapping="Wrap"/></Border>
+          <StackPanel Spacing="8">
+            <StackPanel Orientation="Horizontal" Spacing="13">
+              <Border Width="44" Height="44" CornerRadius="14" Background="#E4EDFD">
+                <Path Classes="icon page-icon" Data="M12,21.5C10.65,20.65 8.2,20 6.5,20C4.85,20 3.15,20.3 1.75,21.05C1.65,21.1 1.6,21.1 1.5,21.1C1.25,21.1 1,20.85 1,20.6V6C1.6,5.55 2.25,5.25 3,5C4.11,4.65 5.33,4.5 6.5,4.5C8.45,4.5 10.55,4.9 12,6C13.45,4.9 15.55,4.5 17.5,4.5C18.67,4.5 19.89,4.65 21,5C21.75,5.25 22.4,5.55 23,6V20.6C23,20.85 22.75,21.1 22.5,21.1C22.4,21.1 22.35,21.1 22.25,21.05C20.85,20.3 19.15,20 17.5,20C15.8,20 13.35,20.65 12,21.5Z"/>
+              </Border>
+              <TextBlock Text="GitHub 設定指引" Classes="page-title" VerticalAlignment="Center"/>
+            </StackPanel>
+            <TextBlock Text="把已登入的瀏覽器狀態安全存成 GitHub Actions Secret，讓每日簽到使用。" Classes="subtle" TextWrapping="Wrap"/>
+          </StackPanel>
+
+          <Border Classes="surface">
+            <StackPanel Spacing="18">
+              <TextBlock Text="設定步驟" Classes="section-title"/>
+
+              <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
+                <Border Width="28" Height="28" CornerRadius="14" Background="#2563EB" VerticalAlignment="Top">
+                  <TextBlock Text="1" Foreground="#FFFFFF" FontWeight="Bold" FontSize="13" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <TextBlock Grid.Column="1" VerticalAlignment="Center" Foreground="#334155" FontSize="13.5" LineHeight="22" TextWrapping="Wrap" Text="在「建立登入狀態」完成登入。"/>
+              </Grid>
+              <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
+                <Border Width="28" Height="28" CornerRadius="14" Background="#2563EB" VerticalAlignment="Top">
+                  <TextBlock Text="2" Foreground="#FFFFFF" FontWeight="Bold" FontSize="13" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <TextBlock Grid.Column="1" VerticalAlignment="Center" Foreground="#334155" FontSize="13.5" LineHeight="22" TextWrapping="Wrap" Text="按「寫入 GitHub Secret」直接存入 Actions Secret；或先複製 Base64，再開啟 Secrets 頁面手動新增。"/>
+              </Grid>
+              <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
+                <Border Width="28" Height="28" CornerRadius="14" Background="#2563EB" VerticalAlignment="Top">
+                  <TextBlock Text="3" Foreground="#FFFFFF" FontWeight="Bold" FontSize="13" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <TextBlock Grid.Column="1" VerticalAlignment="Center" Foreground="#334155" FontSize="13.5" LineHeight="22" TextWrapping="Wrap" Text="Secret 名稱為 LITMEDIA_STORAGE_STATE_BASE64_N。"/>
+              </Grid>
+              <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
+                <Border Width="28" Height="28" CornerRadius="14" Background="#2563EB" VerticalAlignment="Top">
+                  <TextBlock Text="4" Foreground="#FFFFFF" FontWeight="Bold" FontSize="13" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <TextBlock Grid.Column="1" VerticalAlignment="Center" Foreground="#334155" FontSize="13.5" LineHeight="22" TextWrapping="Wrap" Text="在 GitHub Actions 手動執行工作流程，查看最新執行結果。"/>
+              </Grid>
+
+              <StackPanel Orientation="Horizontal" Spacing="10">
+                <Button Classes="primary" Click="OpenActionsButton_OnClick">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <Path Classes="icon" Fill="#FFFFFF" Width="15" Height="15" Data="M12,2A10,10 0 0,0 2,12C2,16.42 4.87,20.17 8.84,21.5C9.34,21.58 9.5,21.27 9.5,21C9.5,20.77 9.5,20.14 9.5,19.31C6.73,19.91 6.14,17.97 6.14,17.97C5.68,16.81 5.03,16.5 5.03,16.5C4.12,15.88 5.1,15.9 5.1,15.9C6.1,15.97 6.63,16.93 6.63,16.93C7.5,18.45 8.97,18 9.54,17.76C9.63,17.11 9.89,16.67 10.17,16.42C7.95,16.17 5.62,15.31 5.62,11.5C5.62,10.39 6,9.5 6.65,8.79C6.55,8.54 6.2,7.5 6.75,6.15C6.75,6.15 7.59,5.88 9.5,7.17C10.29,6.95 11.15,6.84 12,6.84C12.85,6.84 13.71,6.95 14.5,7.17C16.41,5.88 17.25,6.15 17.25,6.15C17.8,7.5 17.45,8.54 17.35,8.79C18,9.5 18.38,10.39 18.38,11.5C18.38,15.32 16.04,16.16 13.81,16.41C14.17,16.72 14.5,17.33 14.5,18.26C14.5,19.6 14.5,20.68 14.5,21C14.5,21.27 14.66,21.59 15.17,21.5C19.14,20.16 22,16.42 22,12A10,10 0 0,0 12,2Z"/>
+                  <TextBlock Text="開啟 GitHub Actions" VerticalAlignment="Center"/>
+                </StackPanel>
+                </Button>
+                <Button Classes="secondary" Click="OpenSecretsButton_OnClick">開啟 Secrets 頁面</Button>
+              </StackPanel>
+            </StackPanel>
+          </Border>
+
+          <Border Background="#FFFBEB" CornerRadius="12" Padding="15,13" BorderBrush="#FDE68A" BorderThickness="1">
+            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="11">
+              <Path Classes="icon warn-icon" VerticalAlignment="Top" Margin="0,1,0,0" Data="M13,14H11V9H13M13,18H11V16H13M1,21H23L12,2L1,21Z"/>
+              <TextBlock Grid.Column="1" Foreground="#92400E" FontSize="13" LineHeight="20" Text="LitMedia 若要求 OTP、CAPTCHA 或其他風險驗證，請在瀏覽器中自行完成後，重新儲存登入狀態。" TextWrapping="Wrap"/>
+            </Grid>
+          </Border>
         </StackPanel>
+
       </StackPanel>
     </ScrollViewer>
   </Grid>
