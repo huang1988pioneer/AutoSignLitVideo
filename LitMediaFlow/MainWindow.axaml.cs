@@ -124,10 +124,11 @@ public partial class MainWindow : Window
         AliasText.Text = _aliases.GetValueOrDefault(AccountNumber) is { Length: > 0 } alias ? alias : "未設定別名";
         var state = ExistingStateFile();
         StateDescription.Text = state is null
-            ? "尚未找到登入狀態。請先完成登入流程，儲存後即可複製 Base64。"
-            : $"已找到 {Path.GetFileName(state)}。可將 Base64 貼入 GitHub Secret。";
+            ? "尚未找到登入狀態。請先完成登入流程，儲存後即可複製 Base64 或寫入 GitHub Secret。"
+            : $"已找到 {Path.GetFileName(state)}。可複製 Base64 後到 Secrets 頁面貼上，或直接寫入 GitHub Secret。";
         CopyStateButton.IsEnabled = state is not null;
         CopySecretButton.IsEnabled = state is not null;
+        UploadSecretButton.IsEnabled = state is not null;
     }
 
     private void OnBrowserSelectionChanged()
@@ -356,13 +357,46 @@ public partial class MainWindow : Window
         if (state is null) { RefreshAccountState(); return; }
         var encoded = Convert.ToBase64String(await File.ReadAllBytesAsync(state));
         if (Clipboard is { } clipboard) await clipboard.SetTextAsync(encoded);
-        StatusText.Text = $"已複製 {encoded.Length:N0} 個字元的 Base64。請貼入 GitHub Secret：{SecretName}。";
+        StatusText.Text = $"已複製 {encoded.Length:N0} 個字元的 Base64。可按「寫入 GitHub Secret」，或開啟 Secrets 頁面後貼入 {SecretName}。";
     }
 
     private async void CopySecretButton_OnClick(object? sender, RoutedEventArgs e)
     {
         if (Clipboard is { } clipboard) await clipboard.SetTextAsync(SecretName);
         StatusText.Text = $"已複製 Secret 名稱：{SecretName}。";
+    }
+
+    private async void UploadSecretButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        var state = ExistingStateFile();
+        if (state is null) { RefreshAccountState(); return; }
+
+        UploadSecretButton.IsEnabled = CopyStateButton.IsEnabled = CopySecretButton.IsEnabled = false;
+        try
+        {
+            var encoded = Convert.ToBase64String(await File.ReadAllBytesAsync(state));
+            if (Clipboard is { } clipboard) await clipboard.SetTextAsync(encoded);
+            StatusText.Text = $"正在寫入 GitHub Actions Secret：{SecretName}。";
+            var repository = await _github.GetRepositoryAsync();
+            await _github.SetActionsSecretAsync(repository, SecretName, encoded);
+            StatusText.Text = $"已寫入 GitHub Actions Secret：{SecretName}（{encoded.Length:N0} 字元）。可開啟 Secrets 頁面確認名稱。";
+        }
+        catch (Exception ex)
+        {
+            StatusText.Text = $"無法寫入 GitHub Secret：{ex.Message} 可改按「開啟 Secrets 頁面」手動貼上。";
+        }
+        finally
+        {
+            RefreshAccountState();
+        }
+    }
+
+    private async void OpenSecretsButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        var repository = GitHubActionsService.DefaultRepository;
+        try { repository = await _github.GetRepositoryAsync(); }
+        catch (Exception) { /* still open the default repository Secrets page */ }
+        OpenGitHubUrl(GitHubActionsService.SecretsSettingsUrl(repository), "已開啟 GitHub Actions Secrets 頁面。");
     }
 
     private void BuildAliasList()
@@ -406,10 +440,13 @@ public partial class MainWindow : Window
         if (active == DashboardView) RefreshDashboard();
     }
 
-    private void OpenActionsButton_OnClick(object? sender, RoutedEventArgs e)
+    private void OpenActionsButton_OnClick(object? sender, RoutedEventArgs e) =>
+        OpenGitHubUrl(GitHubActionsService.ActionsUrl(GitHubActionsService.DefaultRepository), "已開啟 GitHub Actions。");
+
+    private void OpenGitHubUrl(string url, string status)
     {
-        Process.Start(new ProcessStartInfo($"https://github.com/{GitHubActionsService.DefaultRepository}/actions") { UseShellExecute = true });
-        StatusText.Text = "已開啟 GitHub Actions。";
+        Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+        StatusText.Text = status;
     }
 
     private string? ExistingStateFile() => File.Exists(StateFile) ? StateFile : AccountNumber == 1 && File.Exists(LegacyStateFile) ? LegacyStateFile : null;

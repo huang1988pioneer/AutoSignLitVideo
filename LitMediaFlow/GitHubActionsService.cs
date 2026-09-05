@@ -15,6 +15,11 @@ internal sealed class GitHubActionsService
 
     public GitHubActionsService(string workingDirectory) => _workingDirectory = workingDirectory;
 
+    public static string ActionsUrl(string repository) => $"https://github.com/{repository}/actions";
+
+    public static string SecretsSettingsUrl(string repository) =>
+        $"https://github.com/{repository}/settings/secrets/actions";
+
     public async Task<string> GetRepositoryAsync()
     {
         // LITMEDIA_GITHUB_REPOSITORY lets users run the companion against a
@@ -31,6 +36,13 @@ internal sealed class GitHubActionsService
 
     public async Task TriggerAsync(string repository) =>
         await RunGhAsync(["workflow", "run", Workflow, "--repo", repository, "--ref", "main"]);
+
+    public async Task SetActionsSecretAsync(string repository, string name, string value)
+    {
+        if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Secret 名稱不可空白。", nameof(name));
+        if (string.IsNullOrEmpty(value)) throw new ArgumentException("Secret 內容不可空白。", nameof(value));
+        await RunGhAsync(["secret", "set", name, "--repo", repository, "--app", "actions"], value);
+    }
 
     public async Task<RunInfo?> GetLatestAsync(string repository)
     {
@@ -134,7 +146,7 @@ internal sealed class GitHubActionsService
     private Task<string> GetRunLogAsync(string repository, long runId) =>
         RunGhAsync(["run", "view", runId.ToString(), "--repo", repository, "--log"]);
 
-    private async Task<string> RunGhAsync(IEnumerable<string> arguments)
+    private async Task<string> RunGhAsync(IEnumerable<string> arguments, string? stdin = null)
     {
         using var process = new Process
         {
@@ -145,6 +157,7 @@ internal sealed class GitHubActionsService
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
+                RedirectStandardInput = stdin is not null,
                 CreateNoWindow = true
             }
         };
@@ -153,6 +166,11 @@ internal sealed class GitHubActionsService
 
         var stdout = process.StandardOutput.ReadToEndAsync();
         var stderr = process.StandardError.ReadToEndAsync();
+        if (stdin is not null)
+        {
+            await process.StandardInput.WriteAsync(stdin);
+            process.StandardInput.Close();
+        }
         await process.WaitForExitAsync();
         var output = await stdout;
         var error = await stderr;
