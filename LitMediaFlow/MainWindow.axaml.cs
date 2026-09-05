@@ -471,10 +471,52 @@ public partial class MainWindow : Window
     }
 
     private string? ExistingStateFile() => File.Exists(StateFile) ? StateFile : AccountNumber == 1 && File.Exists(LegacyStateFile) ? LegacyStateFile : null;
+
+    // daily-checkin.yml named labels 1–21, without the `-checkin` suffix.
+    private static readonly Dictionary<int, string> DefaultAliases = new()
+    {
+        [1] = "samafengtu",
+        [2] = "fengtusama",
+        [3] = "tushenbyfengbro",
+        [4] = "fengwithting0831",
+        [5] = "fengwithfeng1127",
+        [6] = "fengwithtu1127",
+        [7] = "akaonda333",
+        [8] = "fbussinesseng",
+        [9] = "engdictatorf",
+        [10] = "fengtuprinfo",
+        [11] = "flottojackpoteng",
+        [12] = "feng33feng35feng3",
+        [13] = "chbondg2",
+        [14] = "chbondg_outlook",
+        [15] = "gaokaolevel3iptopscorer_outlook",
+        [16] = "huang1988pioneer_outlook",
+        [17] = "fengtuta_tutamail",
+        [18] = "fengfence_mailfence",
+        [19] = "goldshoot0720",
+        [20] = "abuhg17",
+        [21] = "huang1988pioneer"
+    };
+
     private static Dictionary<int, string> LoadAliases()
     {
-        try { return File.Exists(AliasFile) ? JsonSerializer.Deserialize<Dictionary<int, string>>(File.ReadAllText(AliasFile)) ?? [] : []; }
-        catch (JsonException) { return []; }
+        var aliases = new Dictionary<int, string>(DefaultAliases);
+        try
+        {
+            if (!File.Exists(AliasFile)) return aliases;
+            var saved = JsonSerializer.Deserialize<Dictionary<int, string>>(File.ReadAllText(AliasFile));
+            if (saved is null) return aliases;
+            foreach (var (number, alias) in saved)
+            {
+                if (string.IsNullOrWhiteSpace(alias)) aliases.Remove(number);
+                else aliases[number] = alias.Trim();
+            }
+            return aliases;
+        }
+        catch (JsonException)
+        {
+            return aliases;
+        }
     }
 
     private static int BrowserToIndex(string browser) => browser switch
