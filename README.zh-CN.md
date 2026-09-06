@@ -9,6 +9,7 @@
 1. 在本機互動登入，並為每個帳號保存 Playwright storage state。
 2. 將每個 storage state 存成對應編號的 GitHub Secret。
 3. GitHub Actions 每天為已設定的帳號開啟 LitMedia，並在可簽到時點擊每日簽到。
+4. （可選）簽到成功後把續期過的 session 回寫到對應 Secret —— 見[自動續期（Secret 回寫）](#自動續期secret-回寫)。
 
 本工具**不會**繞過 CAPTCHA、真人驗證或帳號風控。若 LitMedia 要求重新登入或完成驗證，請在本機重新保存 storage state，並更新對應 Secret。
 
@@ -233,6 +234,49 @@ LITMEDIA_BROWSER=chromium
 
 若登入狀態是用 Firefox / Edge 保存的，請設 `LITMEDIA_BROWSER=firefox` 或 `LITMEDIA_BROWSER=edge`。手動執行 workflow 時也可在輸入項選擇 `chromium`、`firefox` 或 `edge`。
 
+### 自動續期（Secret 回寫）
+
+本專案沒有 OAuth refresh token —— 登入狀態是 Playwright storage state。但
+workflow 可以做「滾動更新」：簽到成功後，把瀏覽器當下（已被伺服器續期過）的
+cookies 回寫到 `LITMEDIA_STORAGE_STATE_BASE64_N`，讓會滑動延期的 session 不必
+再手動重登。
+
+此功能**預設關閉**。要啟用，請新增一個 Secret：
+
+```text
+LITMEDIA_SECRETS_TOKEN
+```
+
+必須是能寫入 Secret 的 personal access token：
+
+- Fine-grained PAT：對本倉庫的 **Secrets: Read and write**（外加 **Metadata: Read**）。
+- Classic PAT：`repo` scope。
+
+內建的 `GITHUB_TOKEN` 無法寫入 Secret；沒設這顆 token 時，該步驟只會印出略過訊息，不動原本的 Secret。
+
+回寫的判斷規則：
+
+| 情況 | 結果 |
+| --- | --- |
+| 簽到成功（`checked_in` / `already_done`） | 以續期後的 session 更新 Secret |
+| 簽到失敗或登入過期 | 該步驟不會執行；原 Secret 完全不動 |
+| cookies 沒變且到期時間只延長 < 1 小時 | 不寫入（避免無謂的 Secret 更新） |
+| 回寫來源為空、沒有 cookie、或全部已過期 | 拒絕寫入並發出警告 |
+
+門檻可用 `LITMEDIA_REFRESH_MIN_GAIN_SECONDS` 調整（預設 `3600` 秒）。該步驟是
+`continue-on-error`，回寫失敗不會讓簽到 job 失敗。
+
+本機也能執行同一套回寫，會就地更新 `auth/account-N.storageState.json`：
+
+```powershell
+cmd /c npm run checkin
+cmd /c npm run secret:refresh -- 1 --dry-run
+cmd /c npm run secret:refresh -- 1
+```
+
+注意：只有在 LitMedia 採用滑動過期時才有效。若 cookie 是固定期限，或帳號觸發
+CAPTCHA／裝置驗證，回寫就只會是 no-op，仍需重跑 `npm run auth` 並更新 Secret。
+
 ### 每日自動執行時段（三個台北時段）
 
 GitHub Actions 每天會在下列台北時間（UTC+8）各自執行一次，也可從 Actions 頁籤手動觸發：
@@ -270,4 +314,5 @@ LITMEDIA_DELAY_MAX_MS=15000
 - 若 Chromium 登入或簽到異常，可改用備案瀏覽器（`--browser firefox` / `--browser edge`，或 `LITMEDIA_BROWSER=firefox|edge`），重新保存登入狀態，並在 CI 使用相同瀏覽器。
 - Edge 透過 Playwright channel `msedge` 使用本機 Microsoft Edge（`npx playwright install msedge`）。
 - 若登入過期，請重新執行 `npm run auth`（多帳號用 `-- N`），再產生 base64 並更新 Secret。
+- 若續期步驟出現 `gh secret set ... failed`，代表 `LITMEDIA_SECRETS_TOKEN` 缺少 **Secrets: Read and write** 權限或已過期。簽到本身不受影響，只是自動續期會停用。
 - 若頁面版面變更，請查看失敗 workflow 上傳的 `litmedia-checkin-failure` 截圖 artifact。

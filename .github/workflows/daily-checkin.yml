@@ -250,6 +250,17 @@ jobs:
         if: steps.gate.outputs.skip != 'true'
         run: npm run checkin
 
+      # Only runs when the check-in above succeeded, so the session written back
+      # is one LitMedia just accepted. Never fails the job: a stale secret still
+      # works until it actually expires.
+      - name: Write the renewed session back to its secret
+        if: steps.gate.outputs.skip != 'true'
+        continue-on-error: true
+        env:
+          LITMEDIA_SECRETS_TOKEN: ${{ secrets.LITMEDIA_SECRETS_TOKEN }}
+          LITMEDIA_SECRETS_REPO: ${{ github.repository }}
+        run: npm run secret:refresh
+
       - name: Upload account result and screenshots
         if: always()
         uses: actions/upload-artifact@v4

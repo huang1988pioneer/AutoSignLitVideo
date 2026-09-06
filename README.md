@@ -19,6 +19,7 @@ Choose an account, open the interactive login flow, then copy its Base64 storage
 1. Run an interactive login locally and save Playwright storage state for each account.
 2. Store each storage state as a numbered GitHub Secret.
 3. GitHub Actions opens LitMedia for each configured account every day and clicks the daily check-in button when it is available.
+4. Optionally, a successful run writes the renewed session back over its secret — see [Automatic session renewal](#automatic-session-renewal-secret-write-back).
 
 This does not bypass CAPTCHA, human verification, or account risk checks. If LitMedia requires a fresh login or verification challenge, refresh the saved storage state locally and update the secret.
 
@@ -214,6 +215,54 @@ LITMEDIA_BROWSER=chromium
 
 Set `LITMEDIA_BROWSER=firefox` or `LITMEDIA_BROWSER=edge` if you saved login state with that browser. Manual runs can also pick the browser from the workflow dispatch input (`chromium`, `firefox`, or `edge`).
 
+### Automatic session renewal (secret write-back)
+
+There is no OAuth refresh token here — the login is a Playwright storage state.
+What the workflow can do instead is roll that state forward: after a successful
+check-in it writes the browser's post-run cookies back over
+`LITMEDIA_STORAGE_STATE_BASE64_N`, so a session LitMedia keeps extending never
+has to be re-created by hand.
+
+This is **off by default**. To enable it, add one more repository secret:
+
+```text
+LITMEDIA_SECRETS_TOKEN
+```
+
+It must be a personal access token that can write secrets:
+
+- Fine-grained PAT: repository permission **Secrets: Read and write** (plus **Metadata: Read**) on this repository.
+- Classic PAT: `repo` scope.
+
+The built-in `GITHUB_TOKEN` cannot write secrets, so without this token the step
+just logs that it is skipping and leaves the secret alone.
+
+What the write-back will and will not do:
+
+| Situation | Result |
+| --- | --- |
+| Check-in succeeded (`checked_in` / `already_done`) | Secret updated with the renewed session |
+| Check-in failed, or login expired | Step never runs; the stored secret is left untouched |
+| Cookies unchanged and expiry moved < 1 hour | No write (avoids pointless secret churn) |
+| Refreshed state is empty, cookie-less, or fully expired | Refused with a warning |
+
+Tune the write threshold with `LITMEDIA_REFRESH_MIN_GAIN_SECONDS` (default
+`3600`). The step is `continue-on-error`, so a failed renewal never fails the
+check-in job.
+
+Run the same write-back locally, which refreshes `auth/account-N.storageState.json`
+in place after a local check-in:
+
+```powershell
+cmd /c npm run checkin
+cmd /c npm run secret:refresh -- 1 --dry-run
+cmd /c npm run secret:refresh -- 1
+```
+
+Caveat: this only helps if LitMedia uses sliding expiry. If its cookies have a
+fixed lifetime, or the account hits a CAPTCHA or device check, the write-back
+becomes a no-op and you still need `npm run auth` plus a fresh secret.
+
 ### Daily schedule (three Taipei windows)
 
 GitHub Actions runs every day in these Asia/Taipei windows (and can also be started manually):
@@ -269,6 +318,7 @@ Scheduled GitHub Actions runs upload artifact `litmedia-streaks-<run_id>` with t
 - **Missing `auth/account-N.storageState.json` after auth:** you likely ran `npm run auth --N` (no space). Use `cmd /c npm run auth -- N` with a space after `--`. Check the terminal log: it must say `auth/account-N.storageState.json`, not `auth/litmedia.storageState.json`.
 - If the action says the storage state is missing, confirm the matching numbered secret exists in GitHub Secrets, such as `LITMEDIA_STORAGE_STATE_BASE64_7`.
 - If login expired, rerun `npm run auth` (with `-- N` for numbered accounts), regenerate the base64 value, and update the secret.
+- If the renewal step logs `gh secret set ... failed`, the `LITMEDIA_SECRETS_TOKEN` PAT is missing the **Secrets: Read and write** permission (or has expired). Check-ins keep working; only the automatic renewal is disabled.
 - If Chromium login or check-in fails oddly, try a fallback browser (`--browser firefox` / `--browser edge`, or `LITMEDIA_BROWSER=firefox|edge`), re-save the storage state, and use the same browser in CI.
 - Edge uses the installed Microsoft Edge via Playwright channel `msedge` (`npx playwright install msedge`).
 - If the page layout changes, check the uploaded `litmedia-checkin-failure` screenshot artifact from the failed workflow run.

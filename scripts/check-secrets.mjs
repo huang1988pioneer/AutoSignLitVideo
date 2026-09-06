@@ -65,6 +65,15 @@ for (const accountsWithSameSecret of configured.values()) {
   }
 }
 
+// Optional PAT that lets a successful check-in write its renewed session back.
+console.log('\n--- Automatic session renewal ---');
+if (process.env.LITMEDIA_SECRETS_TOKEN) {
+  console.log('LITMEDIA_SECRETS_TOKEN is configured: successful runs write the renewed session back to its secret.');
+} else {
+  console.log('LITMEDIA_SECRETS_TOKEN is NOT configured: sessions are never renewed automatically.');
+  console.log('Add a PAT with repository permission "Secrets: Read and write" to enable it.');
+}
+
 console.log('\nCheck complete!');
 
 function accountLabel(account) {
