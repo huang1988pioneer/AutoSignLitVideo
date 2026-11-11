@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-11-11T02:02:41.173Z",
+  "generatedAt": "2026-11-11T13:12:43.608Z",
   "accountCount": 33,
-  "streakReportedCount": 6,
+  "streakReportedCount": 5,
   "totalStreakDays": 12,
-  "pointsReportedCount": 16,
-  "totalPoints": 11271,
+  "pointsReportedCount": 15,
+  "totalPoints": 10566,
   "accounts": [
     {
       "account": 1,
@@ -14,37 +14,37 @@
       "lastSignDay": "2026-11-11",
       "pointsAwarded": 10,
       "creditBalance": 915,
-      "finishedAt": "2026-11-11T01:55:31.002Z"
+      "finishedAt": "2026-11-11T13:05:09.161Z"
     },
     {
       "account": 2,
       "label": "fengtusama-checkin (2)",
       "status": "already_done",
-      "streakDays": null,
-      "lastSignDay": null,
-      "pointsAwarded": null,
+      "streakDays": 1,
+      "lastSignDay": "2026-11-11",
+      "pointsAwarded": 5,
       "creditBalance": 939,
-      "finishedAt": "2026-11-11T01:55:52.788Z"
+      "finishedAt": "2026-11-11T13:05:11.416Z"
     },
     {
       "account": 3,
       "label": "tushenbyfengbro-checkin (3)",
       "status": "already_done",
-      "streakDays": 1,
-      "lastSignDay": "2026-11-11",
-      "pointsAwarded": 5,
+      "streakDays": null,
+      "lastSignDay": null,
+      "pointsAwarded": null,
       "creditBalance": 705,
-      "finishedAt": "2026-11-11T01:56:10.155Z"
+      "finishedAt": "2026-11-11T13:06:40.627Z"
     },
     {
       "account": 4,
       "label": "fengwithting0831-checkin (4)",
       "status": "already_done",
-      "streakDays": null,
-      "lastSignDay": null,
-      "pointsAwarded": null,
+      "streakDays": 1,
+      "lastSignDay": "2026-11-11",
+      "pointsAwarded": 5,
       "creditBalance": 750,
-      "finishedAt": "2026-11-11T01:56:27.685Z"
+      "finishedAt": "2026-11-11T13:05:33.770Z"
     },
     {
       "account": 5,
@@ -54,7 +54,7 @@
       "lastSignDay": null,
       "pointsAwarded": null,
       "creditBalance": 700,
-      "finishedAt": "2026-11-11T01:56:44.704Z"
+      "finishedAt": "2026-11-11T13:06:02.053Z"
     },
     {
       "account": 6,
@@ -64,7 +64,7 @@
       "lastSignDay": null,
       "pointsAwarded": null,
       "creditBalance": null,
-      "finishedAt": "2026-11-11T01:58:06.495Z"
+      "finishedAt": "2026-11-11T13:06:24.246Z"
     },
     {
       "account": 7,
@@ -74,17 +74,17 @@
       "lastSignDay": "2026-11-11",
       "pointsAwarded": 5,
       "creditBalance": 685,
-      "finishedAt": "2026-11-11T01:56:37.059Z"
+      "finishedAt": "2026-11-11T13:06:04.929Z"
     },
     {
       "account": 8,
       "label": "fbussinesseng-checkin (8)",
-      "status": "already_done",
+      "status": "failed",
       "streakDays": null,
       "lastSignDay": null,
       "pointsAwarded": null,
-      "creditBalance": 705,
-      "finishedAt": "2026-11-11T01:57:00.536Z"
+      "creditBalance": null,
+      "finishedAt": "2026-11-11T13:08:27.918Z"
     },
     {
       "account": 9,
@@ -94,37 +94,37 @@
       "lastSignDay": null,
       "pointsAwarded": null,
       "creditBalance": 670,
-      "finishedAt": "2026-11-11T01:57:14.254Z"
+      "finishedAt": "2026-11-11T13:06:56.246Z"
     },
     {
       "account": 10,
       "label": "fengtuprinfo-checkin (10)",
       "status": "already_done",
-      "streakDays": 1,
-      "lastSignDay": "2026-11-11",
-      "pointsAwarded": 5,
+      "streakDays": null,
+      "lastSignDay": null,
+      "pointsAwarded": null,
       "creditBalance": 715,
-      "finishedAt": "2026-11-11T01:57:13.194Z"
+      "finishedAt": "2026-11-11T13:06:43.011Z"
     },
     {
       "account": 11,
       "label": "flottojackpoteng-checkin (11)",
+      "status": "checked_in",
+      "streakDays": null,
+      "lastSignDay": "2026-11-11",
+      "pointsAwarded": 5,
+      "creditBalance": 695,
+      "finishedAt": "2026-11-11T13:10:21.427Z"
+    },
+    {
+      "account": 12,
+      "label": "feng33feng35feng3-checkin (12)",
       "status": "failed",
       "streakDays": null,
       "lastSignDay": null,
       "pointsAwarded": null,
       "creditBalance": null,
-      "finishedAt": "2026-11-11T01:57:40.396Z"
-    },
-    {
-      "account": 12,
-      "label": "feng33feng35feng3-checkin (12)",
-      "status": "already_done",
-      "streakDays": null,
-      "lastSignDay": null,
-      "pointsAwarded": null,
-      "creditBalance": 695,
-      "finishedAt": "2026-11-11T01:57:44.532Z"
+      "finishedAt": "2026-11-11T13:09:06.049Z"
     },
     {
       "account": 13,
@@ -134,7 +134,7 @@
       "lastSignDay": null,
       "pointsAwarded": null,
       "creditBalance": null,
-      "finishedAt": "2026-11-11T01:57:56.433Z"
+      "finishedAt": "2026-11-11T13:07:28.728Z"
     },
     {
       "account": 14,
@@ -144,7 +144,7 @@
       "lastSignDay": null,
       "pointsAwarded": null,
       "creditBalance": 720,
-      "finishedAt": "2026-11-11T01:57:57.341Z"
+      "finishedAt": "2026-11-11T13:07:31.654Z"
     },
     {
       "account": 15,
@@ -154,17 +154,17 @@
       "lastSignDay": null,
       "pointsAwarded": null,
       "creditBalance": null,
-      "finishedAt": "2026-11-11T02:01:41.086Z"
+      "finishedAt": "2026-11-11T13:08:10.119Z"
     },
     {
       "account": 16,
       "label": "huang1988pioneer_outlook-checkin (16)",
       "status": "already_done",
-      "streakDays": 1,
-      "lastSignDay": "2026-11-11",
-      "pointsAwarded": 5,
+      "streakDays": null,
+      "lastSignDay": null,
+      "pointsAwarded": null,
       "creditBalance": 710,
-      "finishedAt": "2026-11-11T01:58:20.747Z"
+      "finishedAt": "2026-11-11T13:07:47.807Z"
     },
     {
       "account": 17,
@@ -174,7 +174,7 @@
       "lastSignDay": null,
       "pointsAwarded": null,
       "creditBalance": 715,
-      "finishedAt": "2026-11-11T01:58:36.477Z"
+      "finishedAt": "2026-11-11T13:08:01.779Z"
     },
     {
       "account": 18,
@@ -184,17 +184,17 @@
       "lastSignDay": null,
       "pointsAwarded": null,
       "creditBalance": null,
-      "finishedAt": "2026-11-11T02:02:08.134Z"
+      "finishedAt": "2026-11-11T13:11:50.596Z"
     },
     {
       "account": 19,
       "label": "goldshoot0720-checkin (19)",
       "status": "already_done",
-      "streakDays": 1,
-      "lastSignDay": "2026-11-11",
-      "pointsAwarded": 10,
+      "streakDays": null,
+      "lastSignDay": null,
+      "pointsAwarded": null,
       "creditBalance": 707,
-      "finishedAt": "2026-11-11T01:58:29.152Z"
+      "finishedAt": "2026-11-11T13:12:13.288Z"
     },
     {
       "account": 20,
@@ -204,17 +204,17 @@
       "lastSignDay": null,
       "pointsAwarded": null,
       "creditBalance": 334,
-      "finishedAt": "2026-11-11T01:59:46.958Z"
+      "finishedAt": "2026-11-11T13:11:16.312Z"
     },
     {
       "account": 21,
       "label": "huang1988pioneer-checkin (21)",
       "status": "already_done",
-      "streakDays": null,
-      "lastSignDay": null,
-      "pointsAwarded": null,
+      "streakDays": 2,
+      "lastSignDay": "2026-11-11",
+      "pointsAwarded": 10,
       "creditBalance": 606,
-      "finishedAt": "2026-11-11T02:01:04.017Z"
+      "finishedAt": "2026-11-11T13:10:23.606Z"
     },
     {
       "account": 22,
@@ -224,7 +224,7 @@
       "lastSignDay": null,
       "pointsAwarded": null,
       "creditBalance": null,
-      "finishedAt": "2026-11-11T02:01:01.324Z"
+      "finishedAt": "2026-11-11T13:09:22.471Z"
     },
     {
       "account": 23,
@@ -234,7 +234,7 @@
       "lastSignDay": null,
       "pointsAwarded": null,
       "creditBalance": null,
-      "finishedAt": "2026-11-11T02:01:09.510Z"
+      "finishedAt": "2026-11-11T13:09:06.973Z"
     },
     {
       "account": 24,
@@ -244,7 +244,7 @@
       "lastSignDay": null,
       "pointsAwarded": null,
       "creditBalance": null,
-      "finishedAt": "2026-11-11T01:58:54.752Z"
+      "finishedAt": "2026-11-11T13:11:57.213Z"
     },
     {
       "account": 25,
@@ -254,7 +254,7 @@
       "lastSignDay": null,
       "pointsAwarded": null,
       "creditBalance": null,
-      "finishedAt": "2026-11-11T02:02:01.673Z"
+      "finishedAt": "2026-11-11T13:10:22.446Z"
     },
     {
       "account": 26,
@@ -264,7 +264,7 @@
       "lastSignDay": null,
       "pointsAwarded": null,
       "creditBalance": null,
-      "finishedAt": "2026-11-11T02:02:24.315Z"
+      "finishedAt": "2026-11-11T13:08:35.536Z"
     },
     {
       "account": 27,
@@ -274,7 +274,7 @@
       "lastSignDay": null,
       "pointsAwarded": null,
       "creditBalance": null,
-      "finishedAt": "2026-11-11T02:01:20.588Z"
+      "finishedAt": "2026-11-11T13:08:47.057Z"
     },
     {
       "account": 28,
@@ -284,7 +284,7 @@
       "lastSignDay": null,
       "pointsAwarded": null,
       "creditBalance": null,
-      "finishedAt": "2026-11-11T01:59:43.785Z"
+      "finishedAt": "2026-11-11T13:08:53.411Z"
     },
     {
       "account": 29,
@@ -294,7 +294,7 @@
       "lastSignDay": null,
       "pointsAwarded": null,
       "creditBalance": null,
-      "finishedAt": "2026-11-11T02:01:24.210Z"
+      "finishedAt": "2026-11-11T13:09:09.307Z"
     },
     {
       "account": 30,
@@ -304,7 +304,7 @@
       "lastSignDay": null,
       "pointsAwarded": null,
       "creditBalance": null,
-      "finishedAt": "2026-11-11T02:02:22.404Z"
+      "finishedAt": "2026-11-11T13:11:34.281Z"
     },
     {
       "account": 31,
@@ -314,7 +314,7 @@
       "lastSignDay": null,
       "pointsAwarded": null,
       "creditBalance": null,
-      "finishedAt": "2026-11-11T02:00:16.172Z"
+      "finishedAt": "2026-11-11T13:09:36.300Z"
     },
     {
       "account": 32,
@@ -324,7 +324,7 @@
       "lastSignDay": null,
       "pointsAwarded": null,
       "creditBalance": null,
-      "finishedAt": "2026-11-11T02:02:23.639Z"
+      "finishedAt": "2026-11-11T13:12:18.854Z"
     },
     {
       "account": 33,
@@ -334,7 +334,7 @@
       "lastSignDay": null,
       "pointsAwarded": null,
       "creditBalance": null,
-      "finishedAt": "2026-11-11T02:00:33.295Z"
+      "finishedAt": "2026-11-11T13:12:34.289Z"
     }
   ]
 }
