@@ -3,6 +3,7 @@
         x:Class="LitMediaFlow.MainWindow"
         Width="1200" Height="820" MinWidth="980" MinHeight="660"
         Title="LitMedia Flow — 登入狀態擷取器"
+        Icon="/Assets/app-icon.png"
         FontFamily="Segoe UI, Microsoft JhengHei UI, Noto Sans TC"
         Background="#F4F6FB">
 
@@ -231,15 +232,7 @@
 
         <StackPanel Spacing="18">
           <StackPanel Orientation="Horizontal" Spacing="12">
-            <Border Width="42" Height="42" CornerRadius="13">
-              <Border.Background>
-                <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
-                  <GradientStop Color="#60A5FA" Offset="0"/>
-                  <GradientStop Color="#2563EB" Offset="1"/>
-                </LinearGradientBrush>
-              </Border.Background>
-              <Path Classes="icon brand-icon" Data="M10,16.5L16,12L10,7.5V16.5M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2Z"/>
-            </Border>
+            <Image Width="42" Height="42" Source="avares://LitMediaFlow/Assets/app-icon.png"/>
             <StackPanel VerticalAlignment="Center" Spacing="2">
               <TextBlock Text="LitMedia Flow" FontSize="17" FontWeight="Bold" Foreground="#FFFFFF"/>
               <TextBlock Text="自動簽到控制台" FontSize="11.5" Foreground="#8FA9CC"/>

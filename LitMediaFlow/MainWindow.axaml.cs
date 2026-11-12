@@ -29,6 +29,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        MacDockIcon.ApplyFromResource();
         _github = new GitHubActionsService(_workspace);
         AccountComboBox.ItemsSource = Enumerable.Range(1, AccountCount).Select(number => $"帳號 {number:00}").ToArray();
         AccountComboBox.SelectionChanged += (_, _) => RefreshAccountState();
@@ -164,23 +165,65 @@ public partial class MainWindow : Window
         RunLoginButton.IsEnabled = false;
         try
         {
-            if (!OperatingSystem.IsWindows()) throw new PlatformNotSupportedException("登入流程目前需要 Windows 的 cmd.exe。");
-            var browserArg = _browser is "chromium" ? string.Empty : $" --browser {_browser}";
-            // Set LITMEDIA_BROWSER so child npm scripts and docs stay consistent; also pass CLI flag for auth.
-            var arguments =
-                $"/k set LITMEDIA_BROWSER={_browser}&& npm install && npm run auth -- {AccountNumber}{browserArg}";
-            Process.Start(new ProcessStartInfo
-            {
-                FileName = "cmd.exe",
-                Arguments = arguments,
-                WorkingDirectory = _workspace,
-                UseShellExecute = true
-            });
+            StartLoginTerminal();
             StatusText.Text = $"已開啟 {BrowserShortLabel(_browser)} 登入終端機。完成登入與必要驗證後，請在終端機按 Enter 儲存登入狀態。";
         }
         catch (Exception ex) { StatusText.Text = $"無法開啟登入流程：{ex.Message}"; }
         finally { RunLoginButton.IsEnabled = true; RefreshAccountState(); }
     }
+
+    private void StartLoginTerminal()
+    {
+        var browserArg = _browser is "chromium" ? string.Empty : $" --browser {_browser}";
+        // Set LITMEDIA_BROWSER so child npm scripts stay consistent; also pass the CLI flag for auth.
+        if (OperatingSystem.IsWindows())
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = "cmd.exe",
+                Arguments = $"/k set LITMEDIA_BROWSER={_browser}&& npm install && npm run auth -- {AccountNumber}{browserArg}",
+                WorkingDirectory = _workspace,
+                UseShellExecute = true
+            });
+            return;
+        }
+
+        if (OperatingSystem.IsMacOS())
+        {
+            var command =
+                $"cd {ShSingleQuote(_workspace)} && export LITMEDIA_BROWSER={ShSingleQuote(_browser)} && npm install && npm run auth -- {AccountNumber}{browserArg}";
+            var start = new ProcessStartInfo
+            {
+                FileName = "/usr/bin/osascript",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true
+            };
+            start.ArgumentList.Add("-e");
+            start.ArgumentList.Add("tell application \"Terminal\" to activate");
+            start.ArgumentList.Add("-e");
+            start.ArgumentList.Add($"tell application \"Terminal\" to do script {AppleScriptQuote(command)}");
+            using var process = Process.Start(start) ?? throw new InvalidOperationException("無法啟動 osascript。");
+            var stdout = process.StandardOutput.ReadToEnd();
+            var stderr = process.StandardError.ReadToEnd();
+            process.WaitForExit();
+            if (process.ExitCode != 0)
+            {
+                var detail = string.IsNullOrWhiteSpace(stderr) ? $"結束碼 {process.ExitCode}" : stderr.Trim();
+                throw new InvalidOperationException($"無法開啟 Terminal：{detail}");
+            }
+
+            if (string.IsNullOrWhiteSpace(stdout))
+                throw new InvalidOperationException("Terminal 沒有建立新視窗。");
+            return;
+        }
+
+        throw new PlatformNotSupportedException("登入流程目前支援 Windows 與 macOS。");
+    }
+
+    private static string ShSingleQuote(string value) => "'" + value.Replace("'", "'\\''") + "'";
+
+    private static string AppleScriptQuote(string value) => "\"" + value.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"";
 
     private async void RunCheckinButton_OnClick(object? sender, RoutedEventArgs e)
     {
