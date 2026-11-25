@@ -178,12 +178,13 @@ cmd /c npm run secret -- 1
 
 The number maps to both the local storage file and the secret name. For example, `1` reads `auth/account-1.storageState.json` and copies the value for `LITMEDIA_STORAGE_STATE_BASE64_1`; `33` reads `auth/account-33.storageState.json` and copies the value for `LITMEDIA_STORAGE_STATE_BASE64_33`.
 
-Create numbered repository secrets from `1` to `33`:
+Create a numbered repository secret for each account you use in the daily workflow (1–22 and 33).
 
 ```text
 LITMEDIA_STORAGE_STATE_BASE64_1
 LITMEDIA_STORAGE_STATE_BASE64_2
 ...
+LITMEDIA_STORAGE_STATE_BASE64_22
 LITMEDIA_STORAGE_STATE_BASE64_33
 ```
 
@@ -275,16 +276,9 @@ GitHub Actions runs every day in these Asia/Taipei windows (and can also be star
 
 (cron is UTC `0 21 * * *`, `0 5 * * *`, and `0 13 * * *`.)
 
-### 33 accounts: staggered parallel starts
+### Daily check-in accounts
 
-Each scheduled run launches up to **33 account jobs at once** (matrix), but **start times are staggered in order** so they do not all click in the same second:
-
-1. Account 1 starts first (delay 0).
-2. Account 2 starts a random **5–15 seconds** after account 1’s scheduled start.
-3. Account 3 starts a random **5–15 seconds** after account 2’s scheduled start.
-4. And so on through account 33.
-
-If account 1 starts at `T`, account *n* starts around `T + Σ(5…15)` seconds. Neighboring accounts may overlap (no need to wait for the previous browser to finish), but they do not all click simultaneously. Each job uses its own storage state and browser process. Accounts without a matching secret are skipped. GitHub’s own scheduler can also drift, so wall-clock start may be slightly later than the window above.
+Scheduled and manual workflow runs create **23 account jobs** for accounts **1–22 and 33**. Account 1 has no start delay. Each following job is scheduled 5–15 seconds after the previous one, including account 33 after account 22. Jobs can overlap. Each uses its own login state and skips check-in when its numbered secret is missing.
 
 Local `checkin:all` still runs accounts one after another and waits a random `5` to `15` seconds **between** finished runs (override with repository / env variables):
 

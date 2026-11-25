@@ -197,12 +197,13 @@ cmd /c npm run secret -- 1
 
 編號會同時對應本機檔案與 Secret 名稱。例如 `1` 讀取 `auth/account-1.storageState.json`，並複製 `LITMEDIA_STORAGE_STATE_BASE64_1` 的值；`33` 則對應 `auth/account-33.storageState.json` 與 `LITMEDIA_STORAGE_STATE_BASE64_33`。
 
-在倉庫建立編號 Secret（`1` 到 `33`）：
+請為參與每日簽到的帳號（1～22、33）建立對應的倉庫 Secret。
 
 ```text
 LITMEDIA_STORAGE_STATE_BASE64_1
 LITMEDIA_STORAGE_STATE_BASE64_2
 ...
+LITMEDIA_STORAGE_STATE_BASE64_22
 LITMEDIA_STORAGE_STATE_BASE64_33
 ```
 
@@ -289,16 +290,9 @@ GitHub Actions 每天會在下列台北時間（UTC+8）各自執行一次，也
 
 （cron 為 UTC `0 21 * * *`、`0 5 * * *` 與 `0 13 * * *`。）
 
-### 33 個帳號依序錯開啟動（可重疊並行）
+### 每日簽到帳號
 
-同一次 workflow 會**同時拉起最多 33 個帳號 job**（matrix），但**啟動時間依序錯開**，避免全數同一秒操作：
-
-1. 帳號 1 先開始（延遲 0 秒）
-2. 帳號 2 比帳號 1 **隨機晚 5–15 秒**
-3. 帳號 3 比帳號 2 **隨機晚 5–15 秒**
-4. 依此類推，直到帳號 33
-
-因此若帳號 1 在 `T` 開始，帳號 *n* 約在 `T + Σ(5…15)` 秒後開始；前後帳號可重疊執行（不需等前一個完全跑完），但不會同時點擊。每個 job 使用自己的 storage state 與瀏覽器行程；沒有對應 Secret 的帳號會跳過。GitHub 的排程本身也可能延遲，因此實際開始時間可能略晚於上述時段。
+排程或手動啟動工作流程時，都會為**帳號 1～22 和 33** 建立共 **23 個簽到任務**。帳號 1 的啟動延遲為零，之後每個任務的預定啟動時間比前一個晚 5～15 秒，帳號 33 接在 22 之後。各任務可重疊執行，分別使用自己的登入狀態，缺少對應 Secret 的帳號會跳過簽到。
 
 本機 `checkin:all` 仍是**前一個跑完再跑下一個**，並在帳號之間預設隨機等待 `5` 到 `15` 秒（可用環境變數／倉庫變數覆蓋）：
 

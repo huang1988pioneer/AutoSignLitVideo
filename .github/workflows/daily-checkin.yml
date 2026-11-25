@@ -45,12 +45,10 @@ jobs:
         id: schedule
         shell: bash
         run: |
-          # Account 1 starts immediately (delay 0).
-          # Account N starts 5–15 seconds after account N-1's scheduled start
-          # (cumulative), so jobs can overlap but do not all click at once.
+          # Precompute offsets for up to 33 matrix slots. The first slot starts at zero.
           delays=(0)
           total_delay=0
-          for account in $(seq 2 33); do
+          for ((slot = 1; slot < 33; slot++)); do
             total_delay=$((total_delay + 5 + RANDOM % 11))
             delays+=("$total_delay")
           done
@@ -145,26 +143,6 @@ jobs:
             label: huang1988pioneer-checkin
           - account: 22
             label: account-22
-          - account: 23
-            label: account-23
-          - account: 24
-            label: account-24
-          - account: 25
-            label: account-25
-          - account: 26
-            label: account-26
-          - account: 27
-            label: account-27
-          - account: 28
-            label: account-28
-          - account: 29
-            label: account-29
-          - account: 30
-            label: account-30
-          - account: 31
-            label: account-31
-          - account: 32
-            label: account-32
           - account: 33
             label: account-33
     env:
@@ -178,9 +156,10 @@ jobs:
         shell: bash
         env:
           ACCOUNT_DELAYS: ${{ needs.random_start.outputs.account_delays }}
+          JOB_INDEX: ${{ strategy.job-index }}
         run: |
           IFS=, read -r -a delays <<< "$ACCOUNT_DELAYS"
-          delay_seconds="${delays[$(( ${{ matrix.account }} - 1 ))]}"
+          delay_seconds="${delays[JOB_INDEX]}"
           echo "Account ${{ matrix.account }} (${{ matrix.label }}) will start after ${delay_seconds} seconds."
           echo "Rule: each account starts 5–15s after the previous account's scheduled start (account 1 = 0)."
           sleep "$delay_seconds"
