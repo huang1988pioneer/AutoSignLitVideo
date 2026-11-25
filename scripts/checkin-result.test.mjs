@@ -1,4 +1,9 @@
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { buildCheckinRecord, formatCompactResultLine, buildStreaksMarkdown } from './checkin-result.mjs';
 import { interpretUserPoints } from './litmedia-checkin.mjs';
 
@@ -41,7 +46,30 @@ const markdown = buildStreaksMarkdown({
   totalPoints: 2291,
   accounts: [record]
 });
-assert.match(markdown, /剩餘點數合計 \| \*\*2291\*\*/);
+assert.match(markdown, /剩餘點數合計 \| \*\*2,291\*\*/);
 assert.match(markdown, /\*\*2291\*\*/);
+
+const testDir = await mkdtemp(join(tmpdir(), 'litmedia-points-'));
+try {
+  const inputs = join(testDir, 'accounts');
+  const summary = join(testDir, 'summary.md');
+  await mkdir(inputs);
+  async function summarize(balances) {
+    const records = balances.map((creditBalance, i) => ({
+      account: i + 1, status: 'already_done', pointsAwarded: 99, creditBalance
+    }));
+    await writeFile(join(inputs, 'checkin-result.json'), JSON.stringify(records));
+    await writeFile(summary, '');
+    execFileSync(process.execPath, [fileURLToPath(new URL('./summarize-checkin-results.mjs', import.meta.url)), inputs], {
+      env: { ...process.env, LITMEDIA_SUMMARY_DIR: testDir, LITMEDIA_SCHEDULED_ACCOUNTS: '3', GITHUB_STEP_SUMMARY: summary }
+    });
+    return readFile(summary, 'utf8');
+  }
+  assert.match(await summarize([1500, 230, 0]), /1,730 點.*全部帳號[\s\S]*3 \/ 3 個帳號/);
+  assert.match(await summarize([0, null]), /0 點.*已回報帳號小計[\s\S]*1 \/ 3 個帳號/);
+  assert.match(await summarize([]), /尚無帳號回報點數[\s\S]*0 \/ 3 個帳號/);
+} finally {
+  await rm(testDir, { recursive: true, force: true });
+}
 
 console.log('checkin-result.test.mjs: ok');

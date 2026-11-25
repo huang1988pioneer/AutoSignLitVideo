@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 
 namespace LitMediaFlow;
@@ -42,7 +43,7 @@ internal sealed class GitHubActionsService
     public async Task<RunOverview> GetRunOverviewAsync(string repository)
     {
         var runs = await GetRecentAsync(repository, 300);
-        return new RunOverview(runs.FirstOrDefault(), SummarizeRuns(runs));
+        return new RunOverview(runs.FirstOrDefault(), runs.FirstOrDefault(IsCompleted), SummarizeRuns(runs));
     }
 
     public async Task<IReadOnlyList<RunInfo>> GetRecentAsync(string repository, int limit = 300)
@@ -57,7 +58,26 @@ internal sealed class GitHubActionsService
         }) ?? [];
     }
 
-    public async Task<IReadOnlyList<AccountRunResult>> GetAccountResultsAsync(string repository, long runId)
+    public async Task<RunAccountReport> GetAccountReportAsync(string repository, long runId)
+    {
+        var directory = Directory.CreateTempSubdirectory("litmedia-summary-");
+        try
+        {
+            await RunGhAsync(["run", "download", runId.ToString(), "--repo", repository,
+                "--name", $"litmedia-streaks-{runId}", "--dir", directory.FullName]).ConfigureAwait(false);
+            var json = await File.ReadAllTextAsync(Path.Combine(directory.FullName, "streaks.json")).ConfigureAwait(false);
+            var report = JsonSerializer.Deserialize<RunAccountReport>(json, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+            if (report?.Accounts is not null) return report;
+        }
+        // Older runs can have expired artifacts while their compact per-account logs are still available.
+        catch (Exception ex) when (ex is InvalidOperationException or IOException or JsonException) { }
+        finally { directory.Delete(recursive: true); }
+
+        var accounts = await GetLoggedAccountsAsync(repository, runId).ConfigureAwait(false);
+        return new RunAccountReport(accounts, null);
+    }
+
+    private async Task<IReadOnlyList<AccountRunResult>> GetLoggedAccountsAsync(string repository, long runId)
     {
         var output = await GetRunLogAsync(repository, runId).ConfigureAwait(false);
         var rows = Regex.Matches(
@@ -74,7 +94,7 @@ internal sealed class GitHubActionsService
                     match.Groups["label"].Value.Trim(),
                     match.Groups["status"].Value,
                     streak.Success ? int.Parse(streak.Groups[1].Value) : null,
-                    points.Success ? int.Parse(points.Groups[1].Value) : null);
+                    points.Success ? long.Parse(points.Groups[1].Value) : null);
             })
             .GroupBy(result => result.AccountNumber)
             .Select(group => group.Last())
@@ -122,13 +142,25 @@ internal sealed class GitHubActionsService
     private Task<string> GetRunLogAsync(string repository, long runId) =>
         RunGhAsync(["run", "view", runId.ToString(), "--repo", repository, "--log"]);
 
+    private static string FindGitHubCli()
+    {
+        if (!OperatingSystem.IsMacOS()) return "gh";
+        // Finder may omit Homebrew's bin directory from PATH.
+        var path = Environment.GetEnvironmentVariable("PATH") ?? "";
+        return path.Split(Path.PathSeparator)
+            .Concat(["/opt/homebrew/bin", "/usr/local/bin"])
+            .Where(Path.IsPathFullyQualified)
+            .Select(directory => Path.Combine(directory, "gh"))
+            .FirstOrDefault(File.Exists) ?? "gh";
+    }
+
     private async Task<string> RunGhAsync(IEnumerable<string> arguments, string? stdin = null)
     {
         using var process = new Process
         {
             StartInfo = new ProcessStartInfo
             {
-                FileName = "gh",
+                FileName = FindGitHubCli(),
                 WorkingDirectory = _workingDirectory,
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
@@ -156,6 +188,9 @@ internal sealed class GitHubActionsService
 }
 
 internal sealed record RunInfo(long DatabaseId, string Status, string? Conclusion, DateTimeOffset UpdatedAt, string Url);
-internal sealed record RunOverview(RunInfo? LatestRun, RunTimelineSummary Timeline);
+internal sealed record RunOverview(RunInfo? LatestRun, RunInfo? LatestCompletedRun, RunTimelineSummary Timeline);
 internal sealed record RunTimelineSummary(DateTimeOffset? LastSuccessAt, DateTimeOffset? LastFailureAt, int ConsecutiveSuccessDays);
-internal sealed record AccountRunResult(int AccountNumber, string Label, string Status, int? StreakDays, int? Points);
+internal sealed record RunAccountReport(IReadOnlyList<AccountRunResult> Accounts, int? ScheduledAccountCount);
+internal sealed record AccountRunResult(
+    [property: JsonPropertyName("account")] int AccountNumber, string Label, string Status, int? StreakDays,
+    [property: JsonPropertyName("creditBalance")] long? Points);

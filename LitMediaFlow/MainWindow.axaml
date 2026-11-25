@@ -368,9 +368,10 @@
                       <Border Classes="chip" Background="#DCFCE7">
                         <Path Classes="icon" Fill="#16A34A" Width="15" Height="15" Data="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12.88,17.76V19H11.13V17.79C10.31,17.68 8.83,17.29 8.5,15.24H10.06C10.15,15.87 10.5,16.55 11.94,16.55C13.5,16.55 13.85,15.83 13.85,15.29C13.85,14.56 13.44,13.88 11.64,13.45C9.63,12.96 8.26,12.14 8.26,10.5C8.26,9.09 9.39,8.18 10.79,7.88V6.5H12.54V7.9C14.16,8.28 14.79,9.5 14.84,10.78H13.28C13.24,10 12.86,9.4 11.66,9.4C10.5,9.4 9.83,9.91 9.83,10.63C9.83,11.26 10.31,11.68 12.03,12.12C13.75,12.56 15.42,13.29 15.42,15.28C15.4,16.78 14.28,17.6 12.88,17.76Z"/>
                       </Border>
-                      <TextBlock Text="剩餘點數合計" Classes="eyebrow" VerticalAlignment="Center"/>
+                      <TextBlock Text="全部帳號總點數" Classes="eyebrow" VerticalAlignment="Center"/>
                     </StackPanel>
                     <TextBlock x:Name="PointsTotalText" Text="—" Classes="metric-value"/>
+                    <TextBlock x:Name="PointsCoverageText" Text="尚無點數資料" Classes="eyebrow" TextWrapping="Wrap"/>
                   </StackPanel>
                 </Border>
 

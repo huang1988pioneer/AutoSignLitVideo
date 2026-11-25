@@ -259,19 +259,23 @@ public partial class MainWindow : Window
             var repository = GitHubActionsService.Repository;
             var overview = await _github.GetRunOverviewAsync(repository);
             var run = overview.LatestRun;
-            IReadOnlyList<AccountRunResult> accountResults = [];
+            var reportRun = overview.LatestCompletedRun;
+            var report = new RunAccountReport([], null);
             string message;
             if (run is null)
                 message = "尚無簽到紀錄。下方顯示本機帳號狀態。";
-            else if (!string.Equals(run.Status, "completed", StringComparison.OrdinalIgnoreCase))
+            else if (reportRun is null)
                 message = "簽到流程尚未結束。完成後可更新結果，下方先顯示本機帳號狀態。";
             else
             {
                 try
                 {
-                    accountResults = await _github.GetAccountResultsAsync(repository, run.DatabaseId);
-                    message = accountResults.Count > 0
-                        ? $"顯示 {FormatRunTime(run.UpdatedAt)} 的執行結果。"
+                    report = await _github.GetAccountReportAsync(repository, reportRun.DatabaseId);
+                    var sourceTime = FormatRunTime(reportRun.UpdatedAt);
+                    message = report.Accounts.Count > 0
+                        ? run.DatabaseId == reportRun.DatabaseId
+                            ? $"顯示 {sourceTime} 的簽到結果。"
+                            : $"最新流程{FormatRunConclusion(run)}。點數與帳號明細取自上次完成的簽到（{sourceTime}）。"
                         : "最近一次執行沒有回報帳號明細。下方顯示本機帳號狀態。";
                 }
                 catch (Exception ex) { message = $"無法讀取本次執行明細：{ex.Message}"; }
@@ -282,19 +286,24 @@ public partial class MainWindow : Window
             _latestRunUrl = run?.Url;
             ViewRunButton.IsVisible = !string.IsNullOrEmpty(_latestRunUrl);
             CheckinStatusText.Text = run is null ? "尚無紀錄" : FormatRunConclusion(run);
+            var accountResults = report.Accounts;
+            var scheduled = Math.Max(report.ScheduledAccountCount ?? accountResults.Count, accountResults.Count);
+            var withPoints = accountResults.Where(account => account.Points.HasValue).ToArray();
+            PointsTotalText.Text = withPoints.Length > 0 ? $"{withPoints.Sum(account => account.Points!.Value):N0}" : "—";
+            PointsCoverageText.Text = scheduled > 0
+                ? $"{withPoints.Length} / {scheduled} 個帳號回報" + (withPoints.Length > 0 && withPoints.Length < scheduled ? "（小計）" : "")
+                : "尚無點數資料";
             _showingRunAccounts = accountResults.Count > 0;
             if (!_showingRunAccounts)
             {
-                StreakTotalText.Text = PointsTotalText.Text = "—";
+                StreakTotalText.Text = "—";
                 RefreshLocalAccounts();
                 return;
             }
 
             var reportedStreaks = accountResults.Count(result => result.StreakDays is not null);
             StreakTotalText.Text = $"{reportedStreaks} / {accountResults.Count}";
-            var pointValues = accountResults.Where(result => result.Points is not null).Select(result => result.Points!.Value).ToArray();
-            PointsTotalText.Text = pointValues.Length == 0 ? "—" : $"{pointValues.Sum():N0}";
-            AccountsHeading.Text = "本次簽到結果";
+            AccountsHeading.Text = run?.DatabaseId == reportRun?.DatabaseId ? "本次簽到結果" : "上次完成的簽到結果";
             AccountCountLabel.Text = "回報帳號";
             ConfiguredAccountsText.Text = $"{accountResults.Count} 個";
             RenderDashboardAccounts(accountResults.Select(result => new DashboardAccount(
@@ -692,4 +701,4 @@ public partial class MainWindow : Window
     }
 }
 
-internal sealed record DashboardAccount(int Number, string Label, string State, bool IsHealthy, int? Points = null);
+internal sealed record DashboardAccount(int Number, string Label, string State, bool IsHealthy, long? Points = null);

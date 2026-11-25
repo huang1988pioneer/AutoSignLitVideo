@@ -16,7 +16,10 @@ if (rows.length === 0) {
   console.warn(`No checkin-result*.json found under ${rootDir}`);
 }
 
-const { payload, jsonPath, mdPath } = await writeStreakRegistry(rows, { resultDir: outDir });
+const { payload, jsonPath, mdPath } = await writeStreakRegistry(rows, {
+  resultDir: outDir,
+  scheduledAccountCount: Number(process.env.LITMEDIA_SCHEDULED_ACCOUNTS)
+});
 const dailyMd = buildDailySummaryMarkdown(payload);
 const dailyMdPath = join(outDir, 'checkin-summary.md');
 await mkdir(outDir, { recursive: true });
@@ -125,7 +128,15 @@ function buildDailySummaryMarkdown(payload) {
         : 'ℹ️ No configured accounts';
 
   const lines = [
-    '## LitMedia daily check-in',
+    '## 全部帳號總點數',
+    '',
+    payload.pointsReportedCount > 0
+      ? `**${payload.totalPoints.toLocaleString('en-US')} 點**（${payload.pointsReportedCount === payload.scheduledAccountCount ? '全部帳號' : '已回報帳號小計'}）`
+      : '**尚無帳號回報點數**',
+    '',
+    `回報餘額：${payload.pointsReportedCount} / ${payload.scheduledAccountCount} 個帳號。`,
+    '',
+    '### LitMedia daily check-in',
     '',
     `**${headline}**`,
     '',
@@ -139,8 +150,6 @@ function buildDailySummaryMarkdown(payload) {
     `| Skipped | ${skipped.length} |`,
     `| Streak reported | ${payload.streakReportedCount} |`,
     `| Streak days total | ${payload.totalStreakDays} |`,
-    `| Points reported | ${payload.pointsReportedCount ?? 0} |`,
-    `| Remaining points total | ${payload.totalPoints ?? 0} |`,
     '',
     `<sub>${payload.generatedAt}</sub>`,
     ''

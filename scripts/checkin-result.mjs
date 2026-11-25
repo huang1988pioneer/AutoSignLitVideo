@@ -113,7 +113,7 @@ export async function recordCheckinResult(record, options = {}) {
 /**
  * Write aggregate streak registry for multi-account local / summarize runs.
  * @param {CheckinRecord[]} records
- * @param {{ resultDir?: string }} [options]
+ * @param {{ resultDir?: string, scheduledAccountCount?: number }} [options]
  */
 export async function writeStreakRegistry(records, options = {}) {
   const resultDir = options.resultDir || 'test-results';
@@ -128,6 +128,9 @@ export async function writeStreakRegistry(records, options = {}) {
   const payload = {
     generatedAt: new Date().toISOString(),
     accountCount: accounts.length,
+    scheduledAccountCount: Number.isSafeInteger(options.scheduledAccountCount)
+      ? Math.max(accounts.length, options.scheduledAccountCount)
+      : accounts.length,
     streakReportedCount: withStreak.length,
     totalStreakDays: withStreak.reduce((sum, row) => sum + (row.streakDays || 0), 0),
     pointsReportedCount: withPoints.length,
@@ -202,14 +205,11 @@ async function writeAccountStepSummary(record) {
 }
 
 /**
- * @param {{ generatedAt: string, accountCount: number, streakReportedCount: number, totalStreakDays: number, accounts: Array<object> }} payload
+ * @param {{ generatedAt: string, accountCount: number, scheduledAccountCount?: number, streakReportedCount: number, totalStreakDays: number, pointsReportedCount: number, totalPoints: number, accounts: Array<object> }} payload
  */
 export function buildStreaksMarkdown(payload) {
-  const pointsTotal =
-    payload.totalPoints != null && Number.isFinite(Number(payload.totalPoints))
-      ? Number(payload.totalPoints)
-      : 0;
   const pointsReported = payload.pointsReportedCount ?? 0;
+  const pointsTotal = pointsReported > 0 ? payload.totalPoints.toLocaleString('en-US') : '—';
   const lines = [
     '## LitMedia 連續簽到天數',
     '',
@@ -217,7 +217,7 @@ export function buildStreaksMarkdown(payload) {
     '| --- | ---: |',
     `| 回報連續天數帳號 | **${payload.streakReportedCount}** / ${payload.accountCount} |`,
     `| 連續天數合計 | **${payload.totalStreakDays}** |`,
-    `| 回報剩餘點數帳號 | **${pointsReported}** / ${payload.accountCount} |`,
+    `| 回報剩餘點數帳號 | **${pointsReported}** / ${payload.scheduledAccountCount ?? payload.accountCount} |`,
     `| 剩餘點數合計 | **${pointsTotal}** |`,
     '',
     `<sub>${payload.generatedAt}</sub>`,

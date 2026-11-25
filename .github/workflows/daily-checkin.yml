@@ -95,6 +95,8 @@ jobs:
     needs: [random_start]
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    outputs:
+      scheduled_accounts: ${{ strategy.job-total }}
     strategy:
       fail-fast: false
       matrix:
@@ -254,7 +256,7 @@ jobs:
           retention-days: 14
 
   summarize:
-    name: Summarize streaks
+    name: 簽到摘要與帳號總點數
     needs: [checkin]
     if: always()
     permissions:
@@ -280,6 +282,7 @@ jobs:
       - name: Build streak summary
         env:
           LITMEDIA_SUMMARY_DIR: test-results
+          LITMEDIA_SCHEDULED_ACCOUNTS: ${{ needs.checkin.outputs.scheduled_accounts }}
         run: node scripts/summarize-checkin-results.mjs collected-results
 
       - name: Upload streak registry
