@@ -8,9 +8,8 @@ namespace LitMediaFlow;
 public partial class MainWindow : Window
 {
     private const int AccountCount = 33;
-    private static readonly Avalonia.Media.IBrush HealthyBrush = Avalonia.Media.Brush.Parse("#16A34A");
-    private static readonly Avalonia.Media.IBrush MutedBrush = Avalonia.Media.Brush.Parse("#94A3B8");
-    private static readonly Avalonia.Media.IBrush HeaderBrush = Avalonia.Media.Brush.Parse("#94A3B8");
+    private static readonly Avalonia.Media.IBrush HealthyBrush = Avalonia.Media.Brush.Parse("#167242");
+    private static readonly Avalonia.Media.IBrush MutedBrush = Avalonia.Media.Brush.Parse("#526579");
     private static readonly Avalonia.Media.IBrush RowBackgroundBrush = Avalonia.Media.Brush.Parse("#F8FAFC");
     private static readonly Avalonia.Media.IBrush RowBorderBrush = Avalonia.Media.Brush.Parse("#E9EDF4");
     private static readonly string[] BrowserOptions =
@@ -24,7 +23,9 @@ public partial class MainWindow : Window
     private readonly Dictionary<int, string> _aliases = LoadAliases();
     private readonly Dictionary<int, TextBox> _aliasInputs = new();
     private string _browser = LoadBrowserPreference();
-    private bool _remoteDashboardLoaded;
+    private bool _showingRunAccounts;
+    private string? _latestRunUrl;
+    private DashboardAccount[] _displayedAccounts = [];
 
     public MainWindow()
     {
@@ -32,14 +33,23 @@ public partial class MainWindow : Window
         MacDockIcon.ApplyFromResource();
         _github = new GitHubActionsService(_workspace);
         AccountComboBox.ItemsSource = Enumerable.Range(1, AccountCount).Select(number => $"帳號 {number:00}").ToArray();
-        AccountComboBox.SelectionChanged += (_, _) => RefreshAccountState();
+        AccountComboBox.SelectedIndex = 0;
+        AccountComboBox.SelectionChanged += (_, _) =>
+        {
+            StatusText.Text = "";
+            RefreshAccountState();
+        };
         BrowserComboBox.ItemsSource = BrowserOptions;
         BrowserComboBox.SelectedIndex = BrowserToIndex(_browser);
         BrowserComboBox.SelectionChanged += (_, _) => OnBrowserSelectionChanged();
-        BuildAliasList();
         RefreshAccountState();
         RefreshBrowserHint();
-        RefreshDashboard();
+        RefreshLocalAccounts();
+        Activated += (_, _) =>
+        {
+            if (LoginView.IsVisible) RefreshAccountState();
+            if (DashboardView.IsVisible) RefreshLocalAccounts();
+        };
         Opened += MainWindow_OnOpened;
     }
 
@@ -51,42 +61,33 @@ public partial class MainWindow : Window
     private static string AliasFile => Path.Combine(AppDataDir, "account-aliases.json");
     private static string SettingsFile => Path.Combine(AppDataDir, "settings.json");
 
-    private void RefreshDashboard()
+    private void RefreshLocalAccounts()
     {
-        var ready = Enumerable.Range(1, AccountCount).Where(HasStateForAccount).ToList();
-        var configured = _aliases.Count(pair => !string.IsNullOrWhiteSpace(pair.Value));
-        ConfiguredAccountsText.Text = $"{configured} 個";
-        RefreshCodeLineCount();
-        if (!_remoteDashboardLoaded)
-        {
-            StreakTotalText.Text = "—";
-            PointsTotalText.Text = "—";
-            LastSuccessText.Text = "—";
-            LastFailureText.Text = "—";
-            ConsecutiveSuccessDaysText.Text = "—";
-            CheckinStatusText.Text = "尚未更新";
-            DashboardStatusText.Text = ready.Count == 0
-                ? "尚未偵測到已儲存的登入狀態。請從「建立登入狀態」開始。"
-                : $"已偵測到 {ready.Count} 個可用登入狀態。GitHub Actions 的執行紀錄可由左側指引開啟。";
-        }
-
-        RenderDashboardAccounts(Enumerable.Range(1, AccountCount).Select(number =>
+        if (_showingRunAccounts) return;
+        var accounts = Enumerable.Range(1, AccountCount).Select(number =>
         {
             var hasState = HasStateForAccount(number);
             var alias = _aliases.GetValueOrDefault(number);
-            return new DashboardAccount(number, string.IsNullOrWhiteSpace(alias) ? "未設定別名" : alias, hasState ? "登入有效，等待執行" : "尚未設定登入狀態", hasState);
-        }));
+            return new DashboardAccount(number, string.IsNullOrWhiteSpace(alias) ? "未設定別名" : alias, hasState ? "已儲存登入狀態" : "尚未儲存", hasState);
+        }).ToArray();
+        AccountsHeading.Text = "本機帳號狀態";
+        AccountCountLabel.Text = "已儲存登入";
+        ConfiguredAccountsText.Text = $"{accounts.Count(account => account.IsHealthy)} 個";
+        RenderDashboardAccounts(accounts);
     }
 
-    private void RenderDashboardAccounts(IEnumerable<DashboardAccount> accounts)
+    private void RenderDashboardAccounts(DashboardAccount[] accounts)
     {
+        if (_displayedAccounts.SequenceEqual(accounts)) return;
+        _displayedAccounts = accounts;
         DashboardAccountsPanel.Children.Clear();
         DashboardAccountsPanel.Children.Add(BuildAccountHeader());
         foreach (var account in accounts)
         {
             var row = new Grid { ColumnDefinitions = new ColumnDefinitions("76,150,88,*") };
             var numberText = new TextBlock { Text = $"帳號 {account.Number:00}", Classes = { "account-row" } };
-            var aliasText = new TextBlock { Text = account.Label, Classes = { "account-row" } };
+            var aliasText = new TextBlock { Text = account.Label, Classes = { "account-row" }, Margin = new Avalonia.Thickness(0, 0, 10, 0), TextTrimming = Avalonia.Media.TextTrimming.CharacterEllipsis };
+            ToolTip.SetTip(aliasText, account.Label);
             var pointsText = new TextBlock
             {
                 Text = account.Points is { } points ? $"{points:N0}" : "—",
@@ -116,10 +117,10 @@ public partial class MainWindow : Window
     private static Grid BuildAccountHeader()
     {
         var row = new Grid { ColumnDefinitions = new ColumnDefinitions("76,150,88,*"), Margin = new Avalonia.Thickness(14, 0, 14, 2) };
-        var numberText = new TextBlock { Text = "帳號", FontSize = 11.5, FontWeight = Avalonia.Media.FontWeight.SemiBold, Foreground = HeaderBrush };
-        var aliasText = new TextBlock { Text = "別名", FontSize = 11.5, FontWeight = Avalonia.Media.FontWeight.SemiBold, Foreground = HeaderBrush };
-        var pointsText = new TextBlock { Text = "點數", FontSize = 11.5, FontWeight = Avalonia.Media.FontWeight.SemiBold, Foreground = HeaderBrush };
-        var stateText = new TextBlock { Text = "狀態", FontSize = 11.5, FontWeight = Avalonia.Media.FontWeight.SemiBold, Foreground = HeaderBrush };
+        var numberText = new TextBlock { Text = "帳號", Classes = { "eyebrow" } };
+        var aliasText = new TextBlock { Text = "別名", Classes = { "eyebrow" } };
+        var pointsText = new TextBlock { Text = "點數", Classes = { "eyebrow" } };
+        var stateText = new TextBlock { Text = "狀態", Classes = { "eyebrow" } };
         Grid.SetColumn(aliasText, 1);
         Grid.SetColumn(pointsText, 2);
         Grid.SetColumn(stateText, 3);
@@ -140,9 +141,9 @@ public partial class MainWindow : Window
         StateDescription.Text = state is null
             ? "尚未找到登入狀態。請先完成登入流程，儲存後即可複製 Base64 或寫入 GitHub Secret。"
             : $"已找到 {Path.GetFileName(state)}。可複製 Base64 後到 Secrets 頁面貼上，或直接寫入 GitHub Secret。";
-        CopyStateButton.IsEnabled = state is not null;
-        CopySecretButton.IsEnabled = state is not null;
-        UploadSecretButton.IsEnabled = state is not null;
+        CopyStateButton.IsEnabled = state is not null && AccountComboBox.IsEnabled;
+        CopySecretButton.IsEnabled = AccountComboBox.IsEnabled;
+        UploadSecretButton.IsEnabled = CopyStateButton.IsEnabled;
     }
 
     private void OnBrowserSelectionChanged()
@@ -160,28 +161,30 @@ public partial class MainWindow : Window
             $"程式會以 {label} 開啟 Playwright 登入流程。請自行完成密碼、OTP、CAPTCHA 或任何帳號驗證，並在終端機按 Enter 儲存登入狀態。";
     }
 
-    private void RunLoginButton_OnClick(object? sender, RoutedEventArgs e)
+    private async void RunLoginButton_OnClick(object? sender, RoutedEventArgs e)
     {
         RunLoginButton.IsEnabled = false;
+        var browser = _browser;
+        var account = AccountNumber;
         try
         {
-            StartLoginTerminal();
-            StatusText.Text = $"已開啟 {BrowserShortLabel(_browser)} 登入終端機。完成登入與必要驗證後，請在終端機按 Enter 儲存登入狀態。";
+            await StartLoginTerminalAsync(account, browser);
+            StatusText.Text = $"已開啟帳號 {account:00} 的 {BrowserShortLabel(browser)} 登入終端機。登入後請在終端機按 Enter，再回到此處設定 Secret。";
         }
         catch (Exception ex) { StatusText.Text = $"無法開啟登入流程：{ex.Message}"; }
         finally { RunLoginButton.IsEnabled = true; RefreshAccountState(); }
     }
 
-    private void StartLoginTerminal()
+    private async Task StartLoginTerminalAsync(int account, string browser)
     {
-        var browserArg = _browser is "chromium" ? string.Empty : $" --browser {_browser}";
+        var browserArg = browser is "chromium" ? string.Empty : $" --browser {browser}";
         // Set LITMEDIA_BROWSER so child npm scripts stay consistent; also pass the CLI flag for auth.
         if (OperatingSystem.IsWindows())
         {
             Process.Start(new ProcessStartInfo
             {
                 FileName = "cmd.exe",
-                Arguments = $"/k set LITMEDIA_BROWSER={_browser}&& npm install && npm run auth -- {AccountNumber}{browserArg}",
+                Arguments = $"/k set LITMEDIA_BROWSER={browser}&& npm install && npm run auth -- {account}{browserArg}",
                 WorkingDirectory = _workspace,
                 UseShellExecute = true
             });
@@ -191,7 +194,7 @@ public partial class MainWindow : Window
         if (OperatingSystem.IsMacOS())
         {
             var command =
-                $"cd {ShSingleQuote(_workspace)} && export LITMEDIA_BROWSER={ShSingleQuote(_browser)} && npm install && npm run auth -- {AccountNumber}{browserArg}";
+                $"cd {ShSingleQuote(_workspace)} && export LITMEDIA_BROWSER={ShSingleQuote(browser)} && npm install && npm run auth -- {account}{browserArg}";
             var start = new ProcessStartInfo
             {
                 FileName = "/usr/bin/osascript",
@@ -204,16 +207,17 @@ public partial class MainWindow : Window
             start.ArgumentList.Add("-e");
             start.ArgumentList.Add($"tell application \"Terminal\" to do script {AppleScriptQuote(command)}");
             using var process = Process.Start(start) ?? throw new InvalidOperationException("無法啟動 osascript。");
-            var stdout = process.StandardOutput.ReadToEnd();
-            var stderr = process.StandardError.ReadToEnd();
-            process.WaitForExit();
+            var stdout = process.StandardOutput.ReadToEndAsync();
+            var stderr = process.StandardError.ReadToEndAsync();
+            await process.WaitForExitAsync();
+            var error = await stderr;
             if (process.ExitCode != 0)
             {
-                var detail = string.IsNullOrWhiteSpace(stderr) ? $"結束碼 {process.ExitCode}" : stderr.Trim();
+                var detail = string.IsNullOrWhiteSpace(error) ? $"結束碼 {process.ExitCode}" : error.Trim();
                 throw new InvalidOperationException($"無法開啟 Terminal：{detail}");
             }
 
-            if (string.IsNullOrWhiteSpace(stdout))
+            if (string.IsNullOrWhiteSpace(await stdout))
                 throw new InvalidOperationException("Terminal 沒有建立新視窗。");
             return;
         }
@@ -230,15 +234,16 @@ public partial class MainWindow : Window
         await WithDashboardBusy(async () =>
         {
             DashboardStatusText.Text = "正在觸發 GitHub Actions 簽到流程。";
-            var repository = await _github.GetRepositoryAsync();
-            await _github.TriggerAsync(repository);
+            await _github.TriggerAsync(GitHubActionsService.Repository);
             DashboardStatusText.Text = "已觸發 GitHub Actions。請稍候執行完成，再按「更新執行結果」。";
         });
     }
 
     private async void MainWindow_OnOpened(object? sender, EventArgs e)
     {
-        await RefreshRemoteDashboardAsync();
+        var dashboard = RefreshRemoteDashboardAsync();
+        CodeLineCountText.Text = $"{await Task.Run(CountCodeLines):N0} 行";
+        await dashboard;
     }
 
     private async void RefreshDashboardButton_OnClick(object? sender, RoutedEventArgs e)
@@ -251,43 +256,50 @@ public partial class MainWindow : Window
         await WithDashboardBusy(async () =>
         {
             DashboardStatusText.Text = "正在讀取 GitHub Actions 的最新執行結果與歷史摘要。";
-            RefreshCodeLineCount();
-            var repository = await _github.GetRepositoryAsync();
+            var repository = GitHubActionsService.Repository;
             var overview = await _github.GetRunOverviewAsync(repository);
-            ApplyRunTimeline(overview.Timeline);
-            _remoteDashboardLoaded = true;
             var run = overview.LatestRun;
+            IReadOnlyList<AccountRunResult> accountResults = [];
+            string message;
             if (run is null)
+                message = "尚無簽到紀錄。下方顯示本機帳號狀態。";
+            else if (!string.Equals(run.Status, "completed", StringComparison.OrdinalIgnoreCase))
+                message = "簽到流程尚未結束。完成後可更新結果，下方先顯示本機帳號狀態。";
+            else
             {
-                CheckinStatusText.Text = "尚無紀錄";
-                StreakTotalText.Text = "—";
-                PointsTotalText.Text = "—";
-                DashboardStatusText.Text = "尚未找到 Daily LitMedia Check-in 的執行紀錄。";
-                _remoteDashboardLoaded = true;
+                try
+                {
+                    accountResults = await _github.GetAccountResultsAsync(repository, run.DatabaseId);
+                    message = accountResults.Count > 0
+                        ? $"顯示 {FormatRunTime(run.UpdatedAt)} 的執行結果。"
+                        : "最近一次執行沒有回報帳號明細。下方顯示本機帳號狀態。";
+                }
+                catch (Exception ex) { message = $"無法讀取本次執行明細：{ex.Message}"; }
+            }
+
+            ApplyRunTimeline(overview.Timeline);
+            DashboardStatusText.Text = message;
+            _latestRunUrl = run?.Url;
+            ViewRunButton.IsVisible = !string.IsNullOrEmpty(_latestRunUrl);
+            CheckinStatusText.Text = run is null ? "尚無紀錄" : FormatRunConclusion(run);
+            _showingRunAccounts = accountResults.Count > 0;
+            if (!_showingRunAccounts)
+            {
+                StreakTotalText.Text = PointsTotalText.Text = "—";
+                RefreshLocalAccounts();
                 return;
             }
 
-            CheckinStatusText.Text = FormatRunConclusion(run);
-            var accountResults = await _github.GetAccountResultsAsync(repository, run.DatabaseId);
-            var summary = await _github.GetStreakSummaryAsync(repository, run.DatabaseId);
-            StreakTotalText.Text = summary is null ? "—" : $"{summary.AccountCount} / {accountResults.Count} 個";
+            var reportedStreaks = accountResults.Count(result => result.StreakDays is not null);
+            StreakTotalText.Text = $"{reportedStreaks} / {accountResults.Count}";
             var pointValues = accountResults.Where(result => result.Points is not null).Select(result => result.Points!.Value).ToArray();
             PointsTotalText.Text = pointValues.Length == 0 ? "—" : $"{pointValues.Sum():N0}";
-            if (accountResults.Count > 0)
-            {
-                ConfiguredAccountsText.Text = $"{accountResults.Count} 個";
-                RenderDashboardAccounts(accountResults.Select(result => new DashboardAccount(
-                    result.AccountNumber,
-                    result.Label,
-                    FormatRemoteAccountState(result),
-                    result.Status is "checked_in" or "already_done",
-                    result.Points)));
-            }
-            DashboardStatusText.Text = summary is null
-                ? $"最近執行：{run.Url}。此執行沒有可讀取的連續簽到資料。"
-                : pointValues.Length == 0
-                    ? $"最近執行：{run.Url}；{summary.AccountCount} 個帳號回報連續天數，請於下方帳號清單分別查看。"
-                    : $"最近執行：{run.Url}；{summary.AccountCount} 個帳號回報連續天數，剩餘點數合計 {pointValues.Sum():N0}。";
+            AccountsHeading.Text = "本次簽到結果";
+            AccountCountLabel.Text = "回報帳號";
+            ConfiguredAccountsText.Text = $"{accountResults.Count} 個";
+            RenderDashboardAccounts(accountResults.Select(result => new DashboardAccount(
+                result.AccountNumber, result.Label, FormatRemoteAccountState(result),
+                result.Status is "checked_in" or "already_done", result.Points)).ToArray());
         });
     }
 
@@ -305,6 +317,9 @@ public partial class MainWindow : Window
         {
             "checked_in" => "本次簽到成功",
             "already_done" => "今日已簽到",
+            "failed" => "簽到失敗",
+            "skipped" => "已略過",
+            "missing" => "未回報結果",
             _ => result.Status
         };
         return result.StreakDays is { } days ? $"{state}，連續 {days} 天" : state;
@@ -329,7 +344,7 @@ public partial class MainWindow : Window
         "skipped" => "已略過",
         "neutral" => "中立",
         "action_required" => "需處理",
-        null => RunStatusLabel(run.Status),
+        null or "" => RunStatusLabel(run.Status),
         _ => RunStatusLabel(run.Conclusion)
     };
 
@@ -344,8 +359,6 @@ public partial class MainWindow : Window
         null or "" => "—",
         _ => value
     };
-
-    private void RefreshCodeLineCount() => CodeLineCountText.Text = $"{CountCodeLines():N0} 行";
 
     private int CountCodeLines()
     {
@@ -411,15 +424,27 @@ public partial class MainWindow : Window
     {
         var state = ExistingStateFile();
         if (state is null) { RefreshAccountState(); return; }
-        var encoded = Convert.ToBase64String(await File.ReadAllBytesAsync(state));
-        if (Clipboard is { } clipboard) await clipboard.SetTextAsync(encoded);
-        StatusText.Text = $"已複製 {encoded.Length:N0} 個字元的 Base64。可按「寫入 GitHub Secret」，或開啟 Secrets 頁面後貼入 {SecretName}。";
+        var name = SecretName;
+        try
+        {
+            var clipboard = Clipboard ?? throw new InvalidOperationException("剪貼簿無法使用。");
+            var encoded = Convert.ToBase64String(await File.ReadAllBytesAsync(state));
+            await clipboard.SetTextAsync(encoded);
+            StatusText.Text = $"已複製 Base64。請開啟 Secrets 頁面，貼入 {name}。";
+        }
+        catch (Exception ex) { StatusText.Text = $"無法複製 Base64：{ex.Message}"; }
     }
 
     private async void CopySecretButton_OnClick(object? sender, RoutedEventArgs e)
     {
-        if (Clipboard is { } clipboard) await clipboard.SetTextAsync(SecretName);
-        StatusText.Text = $"已複製 Secret 名稱：{SecretName}。";
+        var name = SecretName;
+        try
+        {
+            var clipboard = Clipboard ?? throw new InvalidOperationException("剪貼簿無法使用。");
+            await clipboard.SetTextAsync(name);
+            StatusText.Text = $"已複製 Secret 名稱：{name}。";
+        }
+        catch (Exception ex) { StatusText.Text = $"無法複製 Secret 名稱：{ex.Message}"; }
     }
 
     private async void UploadSecretButton_OnClick(object? sender, RoutedEventArgs e)
@@ -427,15 +452,16 @@ public partial class MainWindow : Window
         var state = ExistingStateFile();
         if (state is null) { RefreshAccountState(); return; }
 
-        UploadSecretButton.IsEnabled = CopyStateButton.IsEnabled = CopySecretButton.IsEnabled = false;
+        var name = SecretName;
+        AccountComboBox.IsEnabled = false;
+        RefreshAccountState();
         try
         {
             var encoded = Convert.ToBase64String(await File.ReadAllBytesAsync(state));
             if (Clipboard is { } clipboard) await clipboard.SetTextAsync(encoded);
-            StatusText.Text = $"正在寫入 GitHub Actions Secret：{SecretName}。";
-            var repository = await _github.GetRepositoryAsync();
-            await _github.SetActionsSecretAsync(repository, SecretName, encoded);
-            StatusText.Text = $"已寫入 GitHub Actions Secret：{SecretName}（{encoded.Length:N0} 字元）。可開啟 Secrets 頁面確認名稱。";
+            StatusText.Text = $"正在寫入 GitHub Actions Secret：{name}。";
+            await _github.SetActionsSecretAsync(GitHubActionsService.Repository, name, encoded);
+            StatusText.Text = $"已寫入 GitHub Actions Secret：{name}。";
         }
         catch (Exception ex)
         {
@@ -443,16 +469,17 @@ public partial class MainWindow : Window
         }
         finally
         {
+            AccountComboBox.IsEnabled = true;
             RefreshAccountState();
         }
     }
 
-    private async void OpenSecretsButton_OnClick(object? sender, RoutedEventArgs e)
+    private void OpenSecretsButton_OnClick(object? sender, RoutedEventArgs e) =>
+        OpenGitHubUrl(GitHubActionsService.SecretsSettingsUrl(GitHubActionsService.Repository), "已開啟 GitHub Actions Secrets 頁面。");
+
+    private void ViewRunButton_OnClick(object? sender, RoutedEventArgs e)
     {
-        var repository = GitHubActionsService.DefaultRepository;
-        try { repository = await _github.GetRepositoryAsync(); }
-        catch (Exception) { /* still open the default repository Secrets page */ }
-        OpenGitHubUrl(GitHubActionsService.SecretsSettingsUrl(repository), "已開啟 GitHub Actions Secrets 頁面。");
+        if (_latestRunUrl is not null) OpenGitHubUrl(_latestRunUrl, "已開啟本次執行紀錄。");
     }
 
     private void BuildAliasList()
@@ -478,13 +505,25 @@ public partial class MainWindow : Window
 
     private async void SaveAliasesButton_OnClick(object? sender, RoutedEventArgs e)
     {
-        foreach (var (number, input) in _aliasInputs)
-            if (string.IsNullOrWhiteSpace(input.Text)) _aliases.Remove(number); else _aliases[number] = input.Text.Trim();
-        Directory.CreateDirectory(Path.GetDirectoryName(AliasFile)!);
-        await File.WriteAllTextAsync(AliasFile, JsonSerializer.Serialize(_aliases));
-        StatusText.Text = "帳號設定已儲存於此電腦。";
-        RefreshAccountState();
-        RefreshDashboard();
+        var aliases = _aliasInputs.ToDictionary(pair => pair.Key, pair => pair.Value.Text?.Trim() ?? "");
+        SaveAliasesButton.IsEnabled = false;
+        try
+        {
+            Directory.CreateDirectory(AppDataDir);
+            var tempFile = Path.Combine(AppDataDir, Path.GetRandomFileName());
+            try
+            {
+                await File.WriteAllTextAsync(tempFile, JsonSerializer.Serialize(aliases));
+                File.Move(tempFile, AliasFile, overwrite: true);
+            }
+            finally { File.Delete(tempFile); }
+            foreach (var (number, alias) in aliases) _aliases[number] = alias;
+            AliasStatusText.Text = "已儲存到這台電腦。";
+            RefreshAccountState();
+            RefreshLocalAccounts();
+        }
+        catch (Exception ex) { AliasStatusText.Text = $"儲存失敗：{ex.Message}"; }
+        finally { SaveAliasesButton.IsEnabled = true; }
     }
 
     private void DashboardNav_OnClick(object? sender, RoutedEventArgs e) => SetView(DashboardView);
@@ -493,6 +532,8 @@ public partial class MainWindow : Window
     private void GuideNav_OnClick(object? sender, RoutedEventArgs e) => SetView(GuideView);
     private void SetView(Control active)
     {
+        if (active.IsVisible) return;
+        if (active == AccountsView && _aliasInputs.Count == 0) BuildAliasList();
         DashboardView.IsVisible = active == DashboardView;
         LoginView.IsVisible = active == LoginView;
         AccountsView.IsVisible = active == AccountsView;
@@ -501,16 +542,26 @@ public partial class MainWindow : Window
         LoginNavButton.Classes.Set("nav-active", active == LoginView);
         AccountsNavButton.Classes.Set("nav-active", active == AccountsView);
         GuideNavButton.Classes.Set("nav-active", active == GuideView);
-        if (active == DashboardView) RefreshDashboard();
+        ContentScroll.ScrollToHome();
+        if (active == DashboardView) RefreshLocalAccounts();
+        if (active == LoginView) RefreshAccountState();
     }
 
     private void OpenActionsButton_OnClick(object? sender, RoutedEventArgs e) =>
-        OpenGitHubUrl(GitHubActionsService.ActionsUrl(GitHubActionsService.DefaultRepository), "已開啟 GitHub Actions。");
+        OpenGitHubUrl(GitHubActionsService.ActionsUrl(GitHubActionsService.Repository), "已開啟 GitHub Actions。");
 
     private void OpenGitHubUrl(string url, string status)
     {
-        Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
-        StatusText.Text = status;
+        var feedback = DashboardView.IsVisible ? DashboardStatusText : GuideView.IsVisible ? GuideStatusText : StatusText;
+        try
+        {
+            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+            feedback.Text = status;
+        }
+        catch (Exception ex)
+        {
+            feedback.Text = $"無法開啟網頁：{ex.Message}";
+        }
     }
 
     private string? ExistingStateFile() => File.Exists(StateFile) ? StateFile : AccountNumber == 1 && File.Exists(LegacyStateFile) ? LegacyStateFile : null;

@@ -2,9 +2,9 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="LitMediaFlow.MainWindow"
         Width="1200" Height="820" MinWidth="980" MinHeight="660"
-        Title="LitMedia Flow — 登入狀態擷取器"
+        Title="LitMedia Flow — 自動簽到控制台"
         Icon="/Assets/app-icon.png"
-        FontFamily="Segoe UI, Microsoft JhengHei UI, Noto Sans TC"
+        FontFamily="Inter, PingFang TC, Microsoft JhengHei UI, Noto Sans TC"
         Background="#F4F6FB">
 
   <Window.Styles>
@@ -70,7 +70,7 @@
     <Style Selector="TextBlock.eyebrow">
       <Setter Property="FontSize" Value="11.5"/>
       <Setter Property="FontWeight" Value="SemiBold"/>
-      <Setter Property="Foreground" Value="#94A3B8"/>
+      <Setter Property="Foreground" Value="#526579"/>
     </Style>
     <Style Selector="TextBlock.metric-value">
       <Setter Property="FontSize" Value="26"/>
@@ -245,8 +245,8 @@
                 <Path Classes="icon side-icon" Data="M12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22C6.47,22 2,17.5 2,12A10,10 0 0,1 12,2M12.5,7V12.25L17,14.92L16.25,16.15L11,13V7H12.5Z"/>
                 <TextBlock Text="每日排程" Foreground="#DCE8F8" FontSize="12.5" FontWeight="SemiBold" VerticalAlignment="Center"/>
               </StackPanel>
-              <TextBlock Text="05:00 · 14:00 · 21:00" Foreground="#FFFFFF" FontSize="14" FontWeight="SemiBold"/>
-              <TextBlock Text="台北時間，各帳號隔離啟動" Foreground="#8FA9CC" FontSize="11.5" TextWrapping="Wrap"/>
+              <TextBlock Text="05:00 · 13:00 · 21:00" Foreground="#FFFFFF" FontSize="14" FontWeight="SemiBold"/>
+              <TextBlock Text="台北時間，整點後一小時內開始" Foreground="#8FA9CC" FontSize="11.5" TextWrapping="Wrap"/>
             </StackPanel>
           </Border>
         </StackPanel>
@@ -289,15 +289,15 @@
               <Path Classes="icon side-icon" Data="M12,17A2,2 0 0,0 14,15C14,13.89 13.1,13 12,13A2,2 0 0,0 10,15A2,2 0 0,0 12,17M18,8A2,2 0 0,1 20,10V20A2,2 0 0,1 18,22H6A2,2 0 0,1 4,20V10C4,8.89 4.9,8 6,8H7V6A5,5 0 0,1 12,1A5,5 0 0,1 17,6V8H18M12,3A3,3 0 0,0 9,6V8H15V6A3,3 0 0,0 12,3Z"/>
               <TextBlock Text="不會儲存帳密" Foreground="#FFFFFF" FontWeight="SemiBold" FontSize="12.5" VerticalAlignment="Center"/>
             </StackPanel>
-            <TextBlock Text="只會把已登入的瀏覽器狀態複製到剪貼簿，供你自行存入 GitHub Secrets。" TextWrapping="Wrap" Foreground="#9DB5D4" FontSize="11.5" LineHeight="17"/>
+            <TextBlock Text="登入狀態儲存在這台電腦。你可以複製 Base64，或選擇寫入 GitHub Secret。" TextWrapping="Wrap" Foreground="#9DB5D4" FontSize="11.5" LineHeight="17"/>
           </StackPanel>
         </Border>
       </Grid>
     </Border>
 
     <!-- ==================== 內容區 ==================== -->
-    <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-      <StackPanel Margin="44,38,44,36" MaxWidth="880" HorizontalAlignment="Left" Spacing="22">
+    <ScrollViewer x:Name="ContentScroll" Grid.Column="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+      <StackPanel Margin="32,28,32,28" MaxWidth="920" Spacing="22">
 
         <!-- 儀表板 -->
         <StackPanel x:Name="DashboardView" Spacing="20">
@@ -308,18 +308,11 @@
               </Border>
               <TextBlock Text="GitHub Actions 儀表板" Classes="page-title" VerticalAlignment="Center"/>
             </StackPanel>
-            <TextBlock Text="手動執行每日簽到、查看本機帳號登入狀態與 GitHub Actions 設定。" Classes="subtle" TextWrapping="Wrap"/>
+            <TextBlock Text="查看最近一次簽到結果，或手動啟動 GitHub Actions 工作流程。" Classes="subtle" TextWrapping="Wrap"/>
           </StackPanel>
 
           <Border Classes="surface">
             <StackPanel Spacing="22">
-
-              <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
-                <StackPanel Spacing="5">
-                  <TextBlock Text="每日簽到狀態" Classes="section-title"/>
-                  <TextBlock Text="從此電腦啟動既有的檢查流程；GitHub Actions 的最新結果請於 GitHub 網頁查看。" Classes="subtle" TextWrapping="Wrap"/>
-                </StackPanel>
-              </Grid>
 
               <StackPanel Orientation="Horizontal" Spacing="11">
                 <Button x:Name="RunCheckinButton" Classes="primary" Click="RunCheckinButton_OnClick">
@@ -336,6 +329,14 @@
                 </Button>
               </StackPanel>
 
+              <Border Background="#EFF6FF" CornerRadius="12" Padding="15,13" BorderBrush="#BFDBFE" BorderThickness="1">
+                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="11">
+                  <Path Classes="icon note-icon" VerticalAlignment="Top" Margin="0,1,0,0" Data="M13,9H11V7H13M13,17H11V11H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"/>
+                  <TextBlock Grid.Column="1" x:Name="DashboardStatusText" Text="正在讀取執行結果。" Foreground="#1E40AF" FontSize="13" LineHeight="20" TextWrapping="Wrap"/>
+                  <Button x:Name="ViewRunButton" Grid.Column="2" Classes="secondary" IsVisible="False" Click="ViewRunButton_OnClick">查看執行紀錄</Button>
+                </Grid>
+              </Border>
+
               <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="12">
                 <Border Classes="stat">
                   <StackPanel Spacing="11">
@@ -343,7 +344,7 @@
                       <Border Classes="chip" Background="#E4EDFD">
                         <Path Classes="icon" Fill="#2563EB" Width="15" Height="15" Data="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z"/>
                       </Border>
-                      <TextBlock Text="已設定帳號" Classes="eyebrow" VerticalAlignment="Center"/>
+                      <TextBlock x:Name="AccountCountLabel" Text="已儲存登入" Classes="eyebrow" VerticalAlignment="Center"/>
                     </StackPanel>
                     <TextBlock x:Name="ConfiguredAccountsText" Text="0 個" Classes="metric-value"/>
                   </StackPanel>
@@ -355,7 +356,7 @@
                       <Border Classes="chip" Background="#FFEDD5">
                         <Path Classes="icon" Fill="#EA580C" Width="15" Height="15" Data="M17.66,11.2C17.43,10.9 17.15,10.64 16.89,10.38C16.22,9.78 15.46,9.35 14.82,8.72C13.33,7.26 13,4.85 13.95,3C13,3.23 12.17,3.75 11.46,4.32C8.87,6.4 7.85,10.07 9.07,13.22C9.11,13.32 9.15,13.42 9.15,13.55C9.15,13.77 9,13.97 8.8,14.05C8.57,14.15 8.33,14.09 8.14,13.93C8.08,13.88 8.04,13.83 8,13.76C6.87,12.33 6.69,10.28 7.45,8.64C5.78,10 4.87,12.3 5,14.47C5.06,14.97 5.12,15.47 5.29,15.97C5.43,16.57 5.7,17.17 6,17.7C7.08,19.43 8.95,20.67 10.96,20.92C13.1,21.19 15.39,20.8 17.03,19.32C18.86,17.66 19.5,15 18.56,12.72L18.43,12.46C18.22,12 17.66,11.2 17.66,11.2Z"/>
                       </Border>
-                      <TextBlock Text="回報連續天數" Classes="eyebrow" VerticalAlignment="Center"/>
+                      <TextBlock Text="回報天數帳號" Classes="eyebrow" VerticalAlignment="Center"/>
                     </StackPanel>
                     <TextBlock x:Name="StreakTotalText" Text="—" Classes="metric-value"/>
                   </StackPanel>
@@ -403,6 +404,16 @@
                 </Grid>
               </Border>
 
+              <StackPanel Spacing="11">
+                <Grid ColumnDefinitions="*,Auto">
+                  <TextBlock x:Name="AccountsHeading" Text="本機帳號狀態" Classes="section-title" VerticalAlignment="Center"/>
+                  <Button Grid.Column="1" Classes="secondary" Click="LoginNav_OnClick">建立登入狀態</Button>
+                </Grid>
+                <ScrollViewer MaxHeight="320" VerticalScrollBarVisibility="Auto">
+                  <StackPanel x:Name="DashboardAccountsPanel" Spacing="6"/>
+                </ScrollViewer>
+              </StackPanel>
+
               <Border Background="#F8FAFC" CornerRadius="14" Padding="18,14" BorderBrush="#E9EDF4" BorderThickness="1">
                 <Grid ColumnDefinitions="Auto,Auto,*" ColumnSpacing="12">
                   <Border Classes="chip" Background="#E2E8F0" VerticalAlignment="Center">
@@ -412,23 +423,9 @@
                     <TextBlock Text="程式碼行數" Classes="eyebrow"/>
                     <TextBlock x:Name="CodeLineCountText" Text="—" Classes="metric-value-compact"/>
                   </StackPanel>
-                  <TextBlock Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Right" Foreground="#94A3B8" FontSize="12" Text="只計算來源檔的非空行，不含 bin / obj。" TextWrapping="Wrap"/>
+                  <TextBlock Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Right" Foreground="#94A3B8" FontSize="12" Text="啟動時計算來源檔的非空行。" TextWrapping="Wrap"/>
                 </Grid>
               </Border>
-
-              <Border Background="#EFF6FF" CornerRadius="12" Padding="15,13" BorderBrush="#BFDBFE" BorderThickness="1">
-                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="11">
-                  <Path Classes="icon note-icon" VerticalAlignment="Top" Margin="0,1,0,0" Data="M13,9H11V7H13M13,17H11V11H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"/>
-                  <TextBlock Grid.Column="1" x:Name="DashboardStatusText" Text="正在讀取本機帳號登入狀態。" Foreground="#1E40AF" FontSize="13" LineHeight="20" TextWrapping="Wrap"/>
-                </Grid>
-              </Border>
-
-              <StackPanel Spacing="11">
-                <TextBlock Text="帳號狀態" Classes="section-title"/>
-                <ScrollViewer MaxHeight="320" VerticalScrollBarVisibility="Auto">
-                  <StackPanel x:Name="DashboardAccountsPanel" Spacing="6"/>
-                </ScrollViewer>
-              </StackPanel>
             </StackPanel>
           </Border>
         </StackPanel>
@@ -442,7 +439,7 @@
               </Border>
               <TextBlock Text="建立登入狀態" Classes="page-title" VerticalAlignment="Center"/>
             </StackPanel>
-            <TextBlock Text="選擇帳號與瀏覽器後完成人工登入，再把對應的 Base64 值存入 GitHub Secret。預設 Chromium；Firefox / Edge 為備案。" Classes="subtle" TextWrapping="Wrap"/>
+            <TextBlock Text="選擇帳號並完成登入，即可把該帳號的登入狀態存入 GitHub Secret。" Classes="subtle" TextWrapping="Wrap"/>
           </StackPanel>
 
           <Border Classes="surface">
@@ -496,7 +493,7 @@
                 <Border Classes="chip" Background="#E4EDFD">
                   <Path Classes="icon" Fill="#2563EB" Width="15" Height="15" Data="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"/>
                 </Border>
-                <TextBlock Text="步驟 4 · 複製 GitHub Secret" Classes="section-title" VerticalAlignment="Center"/>
+                <TextBlock Text="步驟 4 · 設定 GitHub Secret" Classes="section-title" VerticalAlignment="Center"/>
               </StackPanel>
               <TextBlock x:Name="StateDescription" Classes="subtle" TextWrapping="Wrap"/>
               <StackPanel Orientation="Horizontal" Spacing="10">
@@ -516,10 +513,10 @@
             </StackPanel>
           </Border>
 
-          <Border Background="#EFF6FF" CornerRadius="12" Padding="15,13" BorderBrush="#BFDBFE" BorderThickness="1">
+          <Border IsVisible="{Binding Text, ElementName=StatusText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" Background="#EFF6FF" CornerRadius="12" Padding="15,13" BorderBrush="#BFDBFE" BorderThickness="1">
             <Grid ColumnDefinitions="Auto,*" ColumnSpacing="11">
               <Path Classes="icon note-icon" VerticalAlignment="Top" Margin="0,1,0,0" Data="M13,9H11V7H13M13,17H11V11H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"/>
-              <TextBlock Grid.Column="1" x:Name="StatusText" Foreground="#1E40AF" FontSize="13" LineHeight="20" Text="請先選擇帳號。" TextWrapping="Wrap"/>
+              <TextBlock Grid.Column="1" x:Name="StatusText" Foreground="#1E40AF" FontSize="13" LineHeight="20" Text="" TextWrapping="Wrap"/>
             </Grid>
           </Border>
         </StackPanel>
@@ -544,7 +541,10 @@
                   <StackPanel x:Name="AliasListPanel" Spacing="8"/>
                 </ScrollViewer>
               </Border>
-              <Button Classes="primary" HorizontalAlignment="Left" Click="SaveAliasesButton_OnClick">儲存帳號設定</Button>
+              <StackPanel Orientation="Horizontal" Spacing="14">
+                <Button x:Name="SaveAliasesButton" Classes="primary" Click="SaveAliasesButton_OnClick">儲存帳號設定</Button>
+                <TextBlock x:Name="AliasStatusText" Classes="subtle" VerticalAlignment="Center" TextWrapping="Wrap"/>
+              </StackPanel>
             </StackPanel>
           </Border>
         </StackPanel>
@@ -599,6 +599,7 @@
                 </Button>
                 <Button Classes="secondary" Click="OpenSecretsButton_OnClick">開啟 Secrets 頁面</Button>
               </StackPanel>
+              <TextBlock x:Name="GuideStatusText" Classes="subtle" TextWrapping="Wrap" IsVisible="{Binding Text, RelativeSource={RelativeSource Self}, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
             </StackPanel>
           </Border>
 
