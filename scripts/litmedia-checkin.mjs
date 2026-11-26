@@ -71,6 +71,15 @@ export async function runLitMediaCheckin(browser, options = {}) {
   const apiTracker = attachApiTracker(page);
 
   try {
+    // The sale can appear after the reward panel opens, including during a click's actionability checks.
+    const sale = page.getByRole('dialog')
+      .filter({ has: page.locator('section.pass-stub') })
+      .filter({ has: page.getByRole('button', { name: '立即購買', exact: true }) });
+    await page.addLocatorHandler(sale, async (dialog) => {
+      await dialog.getByRole('button', { name: '關閉', exact: true }).click();
+      console.log('Dismissed the limited-time offer.');
+    });
+
     if (accountIndex) {
       const displayLabel = accountLabel ? `${accountIndex} (${accountLabel})` : accountIndex;
       console.log(`Running LitMedia check-in for account ${displayLabel}`);
