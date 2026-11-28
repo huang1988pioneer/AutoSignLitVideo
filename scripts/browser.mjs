@@ -122,6 +122,7 @@ export function ensureBrowserInstalled(browserName) {
 
   const result = spawnSync('npx', ['playwright', 'install', installTarget], {
     stdio: 'inherit',
+    windowsHide: true,
     shell: true
   });
 

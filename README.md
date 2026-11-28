@@ -106,7 +106,7 @@ $env:LITMEDIA_BROWSER="edge"
 cmd /c npm run checkin:all
 ```
 
-In `LitMediaFlow`, open **建立登入狀態** and pick **Chromium（預設）**, **Firefox（備案）**, or **Edge（備案）** before starting login. Keep GitHub Actions on the same browser via repository variable `LITMEDIA_BROWSER` or the manual workflow input.
+In `LitMediaFlow`, open **建立登入狀態** and pick **Chromium（預設）**, **Firefox（備案）**, or **Edge（備案）** before starting login. After signing in in the browser, return to the app and click **儲存登入狀態**. **取消登入** discards the current attempt. Keep GitHub Actions on the same browser via repository variable `LITMEDIA_BROWSER` or the manual workflow input.
 
 Test the check-in locally (single account; default file `auth/litmedia.storageState.json`):
 

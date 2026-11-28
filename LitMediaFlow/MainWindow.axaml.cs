@@ -23,6 +23,8 @@ public partial class MainWindow : Window
     private readonly Dictionary<int, string> _aliases = LoadAliases();
     private readonly Dictionary<int, TextBox> _aliasInputs = new();
     private string _browser = LoadBrowserPreference();
+    private Process? _loginProcess;
+    private bool _loginCancelled;
     private bool _showingRunAccounts;
     private string? _latestRunUrl;
     private DashboardAccount[] _displayedAccounts = [];
@@ -37,6 +39,7 @@ public partial class MainWindow : Window
         AccountComboBox.SelectionChanged += (_, _) =>
         {
             StatusText.Text = "";
+            LoginStatusText.Text = "";
             RefreshAccountState();
         };
         BrowserComboBox.ItemsSource = BrowserOptions;
@@ -52,6 +55,7 @@ public partial class MainWindow : Window
             if (DashboardView.IsVisible) RefreshLocalAccounts();
         };
         Opened += MainWindow_OnOpened;
+        Closed += (_, _) => StopLogin();
     }
 
     private int AccountNumber => AccountComboBox.SelectedIndex + 1;
@@ -135,6 +139,7 @@ public partial class MainWindow : Window
         StateDescription.Text = state is null
             ? "尚未找到登入狀態。請先完成登入流程，儲存後即可複製 Base64 或寫入 GitHub Secret。"
             : $"已找到 {Path.GetFileName(state)}。可複製 Base64 後到 Secrets 頁面貼上，或直接寫入 GitHub Secret。";
+        RunLoginButton.IsEnabled = AccountComboBox.IsEnabled;
         CopyStateButton.IsEnabled = state is not null && AccountComboBox.IsEnabled;
         CopySecretButton.IsEnabled = AccountComboBox.IsEnabled;
         UploadSecretButton.IsEnabled = CopyStateButton.IsEnabled;
@@ -152,79 +157,105 @@ public partial class MainWindow : Window
         var label = BrowserShortLabel(_browser);
         BrowserHintText.Text = $"GitHub Actions 的 LITMEDIA_BROWSER 請設為 {_browser}。";
         LoginFlowHintText.Text =
-            $"程式會開啟 {label}。請在瀏覽器完成登入與所需的 OTP 或 CAPTCHA 驗證，再回到終端機按 Enter 儲存登入狀態。";
+            $"程式會開啟 {label}。請在瀏覽器完成登入與所需的 OTP 或 CAPTCHA 驗證，再回到 App 按「儲存登入狀態」。";
     }
 
     private async void RunLoginButton_OnClick(object? sender, RoutedEventArgs e)
     {
-        RunLoginButton.IsEnabled = false;
-        var browser = _browser;
+        if (_loginProcess is not null || !AccountComboBox.IsEnabled) return;
         var account = AccountNumber;
+        var browser = _browser;
+        using var process = new Process { StartInfo = CreateLoginStartInfo(account, browser) };
+        _loginCancelled = false;
+        LoginStatusText.Text = $"正在準備 {BrowserShortLabel(browser)}。首次使用可能需要下載瀏覽器。";
+        StatusText.Text = "";
         try
         {
-            await StartLoginTerminalAsync(account, browser);
-            StatusText.Text = $"已開啟帳號 {account:00} 的 {BrowserShortLabel(browser)} 登入終端機。登入後請在終端機按 Enter，再回到此處設定 Secret。";
-        }
-        catch (Exception ex) { StatusText.Text = $"無法開啟登入流程：{ex.Message}"; }
-        finally { RunLoginButton.IsEnabled = true; RefreshAccountState(); }
-    }
+            process.Start();
+            _loginProcess = process;
+            AccountComboBox.IsEnabled = BrowserComboBox.IsEnabled = false;
+            RunLoginButton.IsVisible = false;
+            CancelLoginButton.IsVisible = CancelLoginButton.IsEnabled = true;
+            RefreshAccountState();
 
-    private async Task StartLoginTerminalAsync(int account, string browser)
-    {
-        var browserArg = browser is "chromium" ? string.Empty : $" --browser {browser}";
-        // Set LITMEDIA_BROWSER so child npm scripts stay consistent; also pass the CLI flag for auth.
-        if (OperatingSystem.IsWindows())
-        {
-            Process.Start(new ProcessStartInfo
+            var errors = process.StandardError.ReadToEndAsync();
+            while (await process.StandardOutput.ReadLineAsync() is { } line)
             {
-                FileName = "cmd.exe",
-                Arguments = $"/k set LITMEDIA_BROWSER={browser}&& npm install && npm run auth -- {account}{browserArg}",
-                WorkingDirectory = _workspace.Root,
-                UseShellExecute = true
-            });
-            return;
-        }
-
-        if (OperatingSystem.IsMacOS())
-        {
-            var stateExport = _workspace.AuthDirectory == Path.Combine(_workspace.Root, "auth")
-                ? string.Empty
-                : $"export LITMEDIA_STORAGE_STATE_PATH={ShSingleQuote(StateFile)} && ";
-            var command =
-                $"cd {ShSingleQuote(_workspace.Root)} && {stateExport}export LITMEDIA_BROWSER={ShSingleQuote(browser)} && npm install && npm run auth -- {account}{browserArg}";
-            var start = new ProcessStartInfo
-            {
-                FileName = "/usr/bin/osascript",
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true
-            };
-            start.ArgumentList.Add("-e");
-            start.ArgumentList.Add("tell application \"Terminal\" to activate");
-            start.ArgumentList.Add("-e");
-            start.ArgumentList.Add($"tell application \"Terminal\" to do script {AppleScriptQuote(command)}");
-            using var process = Process.Start(start) ?? throw new InvalidOperationException("無法啟動 osascript。");
-            var stdout = process.StandardOutput.ReadToEndAsync();
-            var stderr = process.StandardError.ReadToEndAsync();
-            await process.WaitForExitAsync();
-            var error = await stderr;
-            if (process.ExitCode != 0)
-            {
-                var detail = string.IsNullOrWhiteSpace(error) ? $"結束碼 {process.ExitCode}" : error.Trim();
-                throw new InvalidOperationException($"無法開啟 Terminal：{detail}");
+                if (line == "LITMEDIA_LOGIN_READY" && !_loginCancelled)
+                {
+                    SaveLoginButton.IsVisible = SaveLoginButton.IsEnabled = true;
+                    LoginStatusText.Text = $"請在瀏覽器登入帳號 {account:00}，確認完成後回到此處儲存。";
+                }
             }
-
-            if (string.IsNullOrWhiteSpace(await stdout))
-                throw new InvalidOperationException("Terminal 沒有建立新視窗。");
-            return;
+            await process.WaitForExitAsync();
+            var error = (await errors).Trim();
+            if (_loginCancelled)
+                LoginStatusText.Text = "已取消登入。";
+            else if (process.ExitCode == 0)
+                LoginStatusText.Text = $"已儲存帳號 {account:00} 的登入狀態，可繼續設定 GitHub Secret。";
+            else
+                LoginStatusText.Text = $"登入流程已結束，尚未儲存。{(error.Length > 900 ? error[..900] : error)}";
         }
-
-        throw new PlatformNotSupportedException("登入流程目前支援 Windows 與 macOS。");
+        catch (Exception ex) { LoginStatusText.Text = $"無法啟動或完成登入。請確認已安裝 Node.js 與 npm。{ex.Message}"; }
+        finally
+        {
+            _loginProcess = null;
+            AccountComboBox.IsEnabled = BrowserComboBox.IsEnabled = true;
+            RunLoginButton.IsVisible = true;
+            SaveLoginButton.IsVisible = CancelLoginButton.IsVisible = false;
+            RefreshAccountState();
+        }
     }
 
-    private static string ShSingleQuote(string value) => "'" + value.Replace("'", "'\\''") + "'";
+    private ProcessStartInfo CreateLoginStartInfo(int account, string browser)
+    {
+        bool windows = OperatingSystem.IsWindows();
+        var start = new ProcessStartInfo
+        {
+            FileName = windows ? "cmd.exe" : "/bin/sh",
+            WorkingDirectory = _workspace.Root,
+            UseShellExecute = false, CreateNoWindow = true,
+            RedirectStandardInput = true, RedirectStandardOutput = true, RedirectStandardError = true
+        };
+        // Account and browser come from the fixed choices in the UI. All paths
+        // are passed via WorkingDirectory or the environment, including paths with spaces.
+        var command = $"npm install && {(windows ? "" : "exec ")}node scripts/save-auth.mjs {account} --browser {browser} --desktop";
+        if (windows)
+            start.Arguments = "/d /c " + command;
+        else
+        {
+            start.ArgumentList.Add("-c");
+            start.ArgumentList.Add(command);
+            if (OperatingSystem.IsMacOS())
+                start.Environment["PATH"] = (Environment.GetEnvironmentVariable("PATH") ?? "/usr/bin:/bin") + ":/opt/homebrew/bin:/usr/local/bin";
+        }
+        start.Environment["LITMEDIA_STORAGE_STATE_PATH"] = StateFile;
+        return start;
+    }
 
-    private static string AppleScriptQuote(string value) => "\"" + value.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"";
+    private void SaveLoginButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (_loginProcess is not { } process || !SaveLoginButton.IsEnabled) return;
+        SaveLoginButton.IsEnabled = CancelLoginButton.IsEnabled = false;
+        try
+        {
+            process.StandardInput.WriteLine("save");
+            process.StandardInput.Flush();
+            LoginStatusText.Text = "正在儲存登入狀態。";
+        }
+        catch (IOException) { LoginStatusText.Text = "登入視窗已關閉。"; }
+    }
+
+    private void CancelLoginButton_OnClick(object? sender, RoutedEventArgs e) => StopLogin();
+
+    private void StopLogin()
+    {
+        if (_loginProcess is not { } process) return;
+        _loginCancelled = true;
+        SaveLoginButton.IsEnabled = CancelLoginButton.IsEnabled = false;
+        try { if (!process.HasExited) process.Kill(entireProcessTree: true); }
+        catch (InvalidOperationException) { /* The browser session already ended. */ }
+    }
 
     private async void RunCheckinButton_OnClick(object? sender, RoutedEventArgs e)
     {

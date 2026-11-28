@@ -96,7 +96,7 @@ $env:LITMEDIA_BROWSER="edge"
 cmd /c npm run checkin:all
 ```
 
-在 `LitMediaFlow` 桌面端：「建立登入狀態」頁可選 **Chromium（預設）**、**Firefox（備案）** 或 **Edge（備案）**。GitHub Actions 請用倉庫變數 `LITMEDIA_BROWSER` 或手動執行時的 workflow 選項保持一致。
+在 `LitMediaFlow` 桌面端：「建立登入狀態」頁可選 **Chromium（預設）**、**Firefox（備案）** 或 **Edge（備案）**。在瀏覽器完成登入後，回到 App 按「儲存登入狀態」；按「取消登入」可放棄這一次操作。GitHub Actions 請用倉庫變數 `LITMEDIA_BROWSER` 或手動執行時的 workflow 選項保持一致。
 
 ## 本機測試簽到
 

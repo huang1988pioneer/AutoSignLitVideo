@@ -190,7 +190,13 @@
             <StackPanel Spacing="12">
               <TextBlock Classes="heading" Text="2. 在瀏覽器登入"/>
               <TextBlock x:Name="LoginFlowHintText" Classes="detail"/>
-              <Button x:Name="RunLoginButton" Classes="primary" Click="RunLoginButton_OnClick" HorizontalAlignment="Left">開啟登入流程</Button>
+              <WrapPanel>
+                <Button x:Name="RunLoginButton" Classes="primary" Margin="0,0,8,0" Click="RunLoginButton_OnClick">開啟登入流程</Button>
+                <Button x:Name="SaveLoginButton" Classes="primary" Margin="0,0,8,0" IsVisible="False" Click="SaveLoginButton_OnClick">儲存登入狀態</Button>
+                <Button x:Name="CancelLoginButton" IsVisible="False" Click="CancelLoginButton_OnClick">取消登入</Button>
+              </WrapPanel>
+              <TextBlock x:Name="LoginStatusText" Classes="detail" AutomationProperties.LiveSetting="Polite"
+                         IsVisible="{Binding Text, RelativeSource={RelativeSource Self}, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
             </StackPanel>
           </Border>
           <Border Classes="sheet">
@@ -245,7 +251,7 @@
                 </Border>
                 <StackPanel Grid.Column="1" Spacing="4">
                   <TextBlock Text="儲存登入狀態" FontWeight="SemiBold"/>
-                  <TextBlock Classes="detail" Text="在「建立登入狀態」選擇帳號與瀏覽器，登入後依終端機提示儲存。"/>
+                  <TextBlock Classes="detail" Text="在「建立登入狀態」選擇帳號與瀏覽器，登入後回到 App，按「儲存登入狀態」。"/>
                 </StackPanel>
               </Grid>
               <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
