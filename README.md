@@ -266,7 +266,7 @@ becomes a no-op and you still need `npm run auth` plus a fresh secret.
 
 ### Daily schedule (three Taipei windows)
 
-GitHub Actions runs every day in these Asia/Taipei windows (and can also be started manually):
+Automatic check-ins and the 04:50 secret-configuration check pause from **November 30, 2026 at 00:00 Asia/Taipei**. Both workflows remain available through **Run workflow**. The final scheduled check-in windows on November 29 are listed below.
 
 | Window (Taipei) | How it starts |
 | --- | --- |
@@ -274,7 +274,7 @@ GitHub Actions runs every day in these Asia/Taipei windows (and can also be star
 | 13:00–14:00 | Fires on the hour, then waits a random 0–59 minutes |
 | 21:00–22:00 | Fires on the hour, then waits a random 0–59 minutes |
 
-(cron is UTC `0 21 * * *`, `0 5 * * *`, and `0 13 * * *`.)
+The 05:00 Taipei slot falls on the preceding UTC date.
 
 ### Daily check-in accounts
 

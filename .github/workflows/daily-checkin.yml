@@ -2,11 +2,10 @@ name: Daily LitMedia Check-in
 
 on:
   schedule:
-    # GitHub Actions uses UTC. These are 05:00, 13:00, and 21:00 Asia/Taipei.
-    # Each schedule fires on the hour; random_start then waits 0–59 minutes.
-    - cron: "0 21 * * *"
-    - cron: "0 5 * * *"
-    - cron: "0 13 * * *"
+    # Final Taipei dates are Nov 28 and 29, 2026. The 05:00 slot uses the previous UTC date.
+    # Cron has no year field; the cutoff step also rejects future years and delayed runs.
+    - cron: "0 21 27,28 11 *"
+    - cron: "0 5,13 28,29 11 *"
   workflow_dispatch:
     inputs:
       browser:
@@ -22,18 +21,32 @@ on:
 permissions:
   contents: read
 
+env:
+  SCHEDULE_PAUSE_DATE: "20261130"
+
 jobs:
   random_start:
     name: Choose a random scheduled start time
     runs-on: ubuntu-latest
     timeout-minutes: 70
     outputs:
+      allowed: ${{ steps.cutoff.outputs.allowed }}
       account_delays: ${{ steps.schedule.outputs.account_delays }}
       browser: ${{ steps.browser.outputs.browser }}
       install_target: ${{ steps.browser.outputs.install_target }}
     steps:
+      - name: Check the Taipei schedule cutoff
+        id: cutoff
+        shell: bash
+        run: |
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" || "$(TZ=Asia/Taipei date +%Y%m%d)" < "$SCHEDULE_PAUSE_DATE" ]]; then
+            echo "allowed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "allowed=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Wait for a random time within the hour
-        if: github.event_name == 'schedule'
+        if: github.event_name == 'schedule' && steps.cutoff.outputs.allowed == 'true'
         shell: bash
         run: |
           delay_seconds=$((RANDOM % 3600))
@@ -43,6 +56,7 @@ jobs:
 
       - name: Create staggered account schedule
         id: schedule
+        if: steps.cutoff.outputs.allowed == 'true'
         shell: bash
         run: |
           # Precompute offsets for up to 33 matrix slots. The first slot starts at zero.
@@ -58,6 +72,7 @@ jobs:
 
       - name: Resolve Playwright browser
         id: browser
+        if: steps.cutoff.outputs.allowed == 'true'
         shell: bash
         run: |
           if [ -n "${{ github.event.inputs.browser }}" ]; then
@@ -93,6 +108,7 @@ jobs:
   checkin:
     name: checkin (${{ matrix.account }}) - ${{ matrix.label }}
     needs: [random_start]
+    if: needs.random_start.outputs.allowed == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     outputs:
@@ -170,6 +186,11 @@ jobs:
         id: gate
         shell: bash
         run: |
+          # A queued account can start later than the scheduling job.
+          if [[ "$GITHUB_EVENT_NAME" == "schedule" && ! "$(TZ=Asia/Taipei date +%Y%m%d)" < "$SCHEDULE_PAUSE_DATE" ]]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           if [ -z "${LITMEDIA_STORAGE_STATE_BASE64}" ]; then
             echo "skip=true" >> "$GITHUB_OUTPUT"
             echo "Account ${{ matrix.account }}: no LITMEDIA_STORAGE_STATE_BASE64_${{ matrix.account }} — skipped."
@@ -229,7 +250,11 @@ jobs:
 
       - name: Run LitMedia check-in
         if: steps.gate.outputs.skip != 'true'
-        run: npm run checkin
+        shell: bash
+        run: |
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" || "$(TZ=Asia/Taipei date +%Y%m%d)" < "$SCHEDULE_PAUSE_DATE" ]]; then
+            npm run checkin
+          fi
 
       # Only runs when the check-in above succeeded, so the session written back
       # is one LitMedia just accepted. Never fails the job: a stale secret still
@@ -240,7 +265,11 @@ jobs:
         env:
           LITMEDIA_SECRETS_TOKEN: ${{ secrets.LITMEDIA_SECRETS_TOKEN }}
           LITMEDIA_SECRETS_REPO: ${{ github.repository }}
-        run: npm run secret:refresh
+        shell: bash
+        run: |
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" || "$(TZ=Asia/Taipei date +%Y%m%d)" < "$SCHEDULE_PAUSE_DATE" ]]; then
+            npm run secret:refresh
+          fi
 
       - name: Upload account result and screenshots
         if: always()
@@ -257,8 +286,8 @@ jobs:
 
   summarize:
     name: 簽到摘要與帳號總點數
-    needs: [checkin]
-    if: always()
+    needs: [random_start, checkin]
+    if: always() && needs.random_start.outputs.allowed == 'true' && needs.checkin.result != 'skipped'
     permissions:
       contents: write
     runs-on: ubuntu-latest
@@ -301,6 +330,9 @@ jobs:
         if: always()
         continue-on-error: true
         run: |
+          if [[ "$GITHUB_EVENT_NAME" == "schedule" && ! "$(TZ=Asia/Taipei date +%Y%m%d)" < "$SCHEDULE_PAUSE_DATE" ]]; then
+            exit 0
+          fi
           set -eu
           if [ ! -f test-results/streaks.json ]; then
             echo "No streaks.json to publish; skipping."

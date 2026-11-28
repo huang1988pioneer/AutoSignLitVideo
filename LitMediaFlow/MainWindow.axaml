@@ -78,8 +78,8 @@
           <Border Classes="sheet" Background="{StaticResource TintBrush}" BorderBrush="{StaticResource PlotGridBrush}">
             <Grid ColumnDefinitions="4*,5*" RowDefinitions="Auto,Auto" ColumnSpacing="16">
               <StackPanel x:Name="ScheduleActions" Spacing="7" VerticalAlignment="Center">
-                <TextBlock Classes="heading" Text="每日簽到排程" FontSize="24"/>
-                <TextBlock Classes="detail" Text="台北時間，各時段自整點起一小時內開始。"/>
+                <TextBlock Classes="heading" Text="簽到排程" FontSize="24"/>
+                <TextBlock Classes="detail" Text="自 2026/11/30 00:00（台北時間）起暫停自動排程，仍可手動簽到。"/>
                 <Button x:Name="RunCheckinButton" Classes="primary" HorizontalAlignment="Left" Margin="0,6,0,0" Click="RunCheckinButton_OnClick">
                   <StackPanel Orientation="Horizontal" Spacing="8">
                     <PathIcon Width="13" Height="13" Data="M4 2L20 12L4 22Z"/>
@@ -88,7 +88,7 @@
                 </Button>
               </StackPanel>
               <Viewbox x:Name="SchedulePlot" Stretch="Uniform" MaxHeight="130">
-                <Canvas Width="414" Height="108" AutomationProperties.Name="台北時間 05:00、13:00、21:00 開始排程">
+                <Canvas Width="414" Height="108" AutomationProperties.Name="截至 2026/11/29 的台北時段：05:00、13:00、21:00">
                   <Path Stroke="{StaticResource PlotGridBrush}" StrokeThickness="1"
                         Data="M14,34 H398 M14,55 H398 M14,76 H398 M14,29 V81 M46,29 V81 M78,29 V81 M110,29 V81 M142,29 V81 M174,29 V81 M206,29 V81 M238,29 V81 M270,29 V81 M302,29 V81 M334,29 V81 M366,29 V81 M398,29 V81"/>
                   <Path Fill="{StaticResource PlotFillBrush}" Data="M94,76 V39 H110 V76 Z M222,76 V39 H238 V76 Z M350,76 V39 H366 V76 Z"/>
