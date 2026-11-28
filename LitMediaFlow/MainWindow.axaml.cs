@@ -18,7 +18,7 @@ public partial class MainWindow : Window
         "Firefox（備案）",
         "Edge（備案）"
     ];
-    private readonly string _workspace = FindWorkspace();
+    private readonly (string Root, string AuthDirectory) _workspace = FindWorkspace();
     private readonly GitHubActionsService _github;
     private readonly Dictionary<int, string> _aliases = LoadAliases();
     private readonly Dictionary<int, TextBox> _aliasInputs = new();
@@ -31,7 +31,7 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         MacDockIcon.ApplyFromResource();
-        _github = new GitHubActionsService(_workspace);
+        _github = new GitHubActionsService(_workspace.Root);
         AccountComboBox.ItemsSource = Enumerable.Range(1, AccountCount).Select(number => $"帳號 {number:00}").ToArray();
         AccountComboBox.SelectedIndex = 0;
         AccountComboBox.SelectionChanged += (_, _) =>
@@ -55,8 +55,8 @@ public partial class MainWindow : Window
     }
 
     private int AccountNumber => AccountComboBox.SelectedIndex + 1;
-    private string StateFile => Path.Combine(_workspace, "auth", $"account-{AccountNumber}.storageState.json");
-    private string LegacyStateFile => Path.Combine(_workspace, "auth", "litmedia.storageState.json");
+    private string StateFile => Path.Combine(_workspace.AuthDirectory, $"account-{AccountNumber}.storageState.json");
+    private string LegacyStateFile => Path.Combine(_workspace.AuthDirectory, "litmedia.storageState.json");
     private string SecretName => $"LITMEDIA_STORAGE_STATE_BASE64_{AccountNumber}";
     private static string AppDataDir => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "LitMediaFlow");
     private static string AliasFile => Path.Combine(AppDataDir, "account-aliases.json");
@@ -125,7 +125,7 @@ public partial class MainWindow : Window
         return row;
     }
 
-    private bool HasStateForAccount(int number) => File.Exists(Path.Combine(_workspace, "auth", $"account-{number}.storageState.json")) || number == 1 && File.Exists(LegacyStateFile);
+    private bool HasStateForAccount(int number) => File.Exists(Path.Combine(_workspace.AuthDirectory, $"account-{number}.storageState.json")) || number == 1 && File.Exists(LegacyStateFile);
 
     private void RefreshAccountState()
     {
@@ -179,7 +179,7 @@ public partial class MainWindow : Window
             {
                 FileName = "cmd.exe",
                 Arguments = $"/k set LITMEDIA_BROWSER={browser}&& npm install && npm run auth -- {account}{browserArg}",
-                WorkingDirectory = _workspace,
+                WorkingDirectory = _workspace.Root,
                 UseShellExecute = true
             });
             return;
@@ -187,8 +187,11 @@ public partial class MainWindow : Window
 
         if (OperatingSystem.IsMacOS())
         {
+            var stateExport = _workspace.AuthDirectory == Path.Combine(_workspace.Root, "auth")
+                ? string.Empty
+                : $"export LITMEDIA_STORAGE_STATE_PATH={ShSingleQuote(StateFile)} && ";
             var command =
-                $"cd {ShSingleQuote(_workspace)} && export LITMEDIA_BROWSER={ShSingleQuote(browser)} && npm install && npm run auth -- {account}{browserArg}";
+                $"cd {ShSingleQuote(_workspace.Root)} && {stateExport}export LITMEDIA_BROWSER={ShSingleQuote(browser)} && npm install && npm run auth -- {account}{browserArg}";
             var start = new ProcessStartInfo
             {
                 FileName = "/usr/bin/osascript",
@@ -366,7 +369,7 @@ public partial class MainWindow : Window
     private int CountCodeLines()
     {
         var total = 0;
-        foreach (var file in EnumerateSourceFiles(_workspace))
+        foreach (var file in EnumerateSourceFiles(_workspace.Root))
         {
             try
             {
@@ -686,12 +689,25 @@ public partial class MainWindow : Window
         }
     }
 
-    private static string FindWorkspace()
+    private static (string Root, string AuthDirectory) FindWorkspace()
     {
-        foreach (var start in new[] { Environment.CurrentDirectory, AppContext.BaseDirectory })
+        // A single-file app's base directory can be the extraction cache. Also look
+        // beside the executable so earlier releases keep using their existing auth/.
+        var executableDirectory = Path.GetDirectoryName(Environment.ProcessPath) ?? AppContext.BaseDirectory;
+        foreach (var start in new[] { Environment.CurrentDirectory, executableDirectory, AppContext.BaseDirectory })
             for (var dir = new DirectoryInfo(start); dir is not null; dir = dir.Parent)
-                if (File.Exists(Path.Combine(dir.FullName, "package.json"))) return dir.FullName;
-        return Environment.CurrentDirectory;
+                if (File.Exists(Path.Combine(dir.FullName, "package.json")) &&
+                    File.Exists(Path.Combine(dir.FullName, "scripts", "save-auth.mjs")))
+                    return (dir.FullName, Path.Combine(dir.FullName, "auth"));
+
+        var bundled = Path.Combine(AppContext.BaseDirectory, "workflow");
+        if (File.Exists(Path.Combine(bundled, "scripts", "save-auth.mjs")))
+        {
+            // The runtime cache changes with each build. Keep macOS login state across upgrades.
+            var authDirectory = OperatingSystem.IsMacOS() ? Path.Combine(AppDataDir, "auth") : Path.Combine(bundled, "auth");
+            return (bundled, authDirectory);
+        }
+        return (Environment.CurrentDirectory, Path.Combine(Environment.CurrentDirectory, "auth"));
     }
 }
 

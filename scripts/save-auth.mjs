@@ -1,4 +1,5 @@
 import { mkdir } from 'node:fs/promises';
+import { dirname } from 'node:path';
 import { createInterface } from 'node:readline/promises';
 import { stdin as input, stdout as output } from 'node:process';
 import { ensureBrowserInstalled, launchBrowser, parseAuthArgs } from './browser.mjs';
@@ -25,7 +26,7 @@ if (rest.includes('--help') || rest.includes('-h')) {
 
 const statePath = process.env.LITMEDIA_STORAGE_STATE_PATH ?? defaultStatePath(accountIndex);
 
-await mkdir('auth', { recursive: true });
+await mkdir(dirname(statePath), { recursive: true });
 await ensureBrowserInstalled(browserName);
 
 const browser = await launchBrowser({ browserName, headless: false });
