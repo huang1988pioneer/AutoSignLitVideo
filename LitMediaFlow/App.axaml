@@ -1,19 +1,27 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             x:Class="LitMediaFlow.App"
-             RequestedThemeVariant="Light">
+             x:Class="LitMediaFlow.App" RequestedThemeVariant="Light">
   <Application.Styles>
-    <FluentTheme />
+    <FluentTheme/>
   </Application.Styles>
-
   <Application.Resources>
-    <!-- 品牌色票：清爽藍白 -->
-    <SolidColorBrush x:Key="BrandPrimaryBrush" Color="#2563EB"/>
-    <SolidColorBrush x:Key="BrandPrimaryDarkBrush" Color="#1D4ED8"/>
-    <SolidColorBrush x:Key="BrandInkBrush" Color="#0F172A"/>
-    <SolidColorBrush x:Key="BrandMutedBrush" Color="#64748B"/>
-    <SolidColorBrush x:Key="BrandLineBrush" Color="#E4E9F2"/>
-    <SolidColorBrush x:Key="BrandSurfaceBrush" Color="#FFFFFF"/>
-    <SolidColorBrush x:Key="BrandCanvasBrush" Color="#F4F6FB"/>
+    <SolidColorBrush x:Key="CanvasBrush" Color="#F2F7FA"/>
+    <SolidColorBrush x:Key="SurfaceBrush" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="RailBrush" Color="#F9FCFD"/>
+    <SolidColorBrush x:Key="InkBrush" Color="#142F40"/>
+    <SolidColorBrush x:Key="MutedBrush" Color="#4B6575"/>
+    <SolidColorBrush x:Key="LineBrush" Color="#D4E1E7"/>
+    <SolidColorBrush x:Key="AccentBrush" Color="#006B76"/>
+    <SolidColorBrush x:Key="AccentHoverBrush" Color="#005760"/>
+    <SolidColorBrush x:Key="AccentPressedBrush" Color="#00464F"/>
+    <SolidColorBrush x:Key="TintBrush" Color="#DEF3F3"/>
+    <SolidColorBrush x:Key="HoverBrush" Color="#E8F1F5"/>
+    <SolidColorBrush x:Key="PlotGridBrush" Color="#B9DDDE"/>
+    <SolidColorBrush x:Key="PlotFillBrush" Color="#97DDD6"/>
+    <SolidColorBrush x:Key="SuccessBrush" Color="#19704E"/>
+    <SolidColorBrush x:Key="WarningBrush" Color="#815216"/>
+    <SolidColorBrush x:Key="WarningSurfaceBrush" Color="#FFF4DC"/>
+    <FontFamily x:Key="InterfaceFont">Inter, PingFang TC, Microsoft JhengHei UI, Noto Sans TC</FontFamily>
+    <FontFamily x:Key="DataFont">Menlo, Consolas, DejaVu Sans Mono, PingFang TC, Microsoft JhengHei UI</FontFamily>
   </Application.Resources>
 </Application>

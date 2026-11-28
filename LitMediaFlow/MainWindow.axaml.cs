@@ -1,6 +1,10 @@
 using System.Diagnostics;
 using System.Text.Json;
+using Avalonia;
+using Avalonia.Automation;
 using Avalonia.Controls;
+using Avalonia.Layout;
+using Avalonia.Media;
 using Avalonia.Interactivity;
 
 namespace LitMediaFlow;
@@ -8,10 +12,6 @@ namespace LitMediaFlow;
 public partial class MainWindow : Window
 {
     private const int AccountCount = 33;
-    private static readonly Avalonia.Media.IBrush HealthyBrush = Avalonia.Media.Brush.Parse("#167242");
-    private static readonly Avalonia.Media.IBrush MutedBrush = Avalonia.Media.Brush.Parse("#526579");
-    private static readonly Avalonia.Media.IBrush RowBackgroundBrush = Avalonia.Media.Brush.Parse("#F8FAFC");
-    private static readonly Avalonia.Media.IBrush RowBorderBrush = Avalonia.Media.Brush.Parse("#E9EDF4");
     private static readonly string[] BrowserOptions =
     [
         "Chromium（預設）",
@@ -42,6 +42,7 @@ public partial class MainWindow : Window
         BrowserComboBox.ItemsSource = BrowserOptions;
         BrowserComboBox.SelectedIndex = BrowserToIndex(_browser);
         BrowserComboBox.SelectionChanged += (_, _) => OnBrowserSelectionChanged();
+        AccountTableHeader.Child = BuildAccountHeader();
         RefreshAccountState();
         RefreshBrowserHint();
         RefreshLocalAccounts();
@@ -81,53 +82,46 @@ public partial class MainWindow : Window
         if (_displayedAccounts.SequenceEqual(accounts)) return;
         _displayedAccounts = accounts;
         DashboardAccountsPanel.Children.Clear();
-        DashboardAccountsPanel.Children.Add(BuildAccountHeader());
         foreach (var account in accounts)
         {
-            var row = new Grid { ColumnDefinitions = new ColumnDefinitions("76,150,88,*") };
-            var numberText = new TextBlock { Text = $"帳號 {account.Number:00}", Classes = { "account-row" } };
-            var aliasText = new TextBlock { Text = account.Label, Classes = { "account-row" }, Margin = new Avalonia.Thickness(0, 0, 10, 0), TextTrimming = Avalonia.Media.TextTrimming.CharacterEllipsis };
-            ToolTip.SetTip(aliasText, account.Label);
-            var pointsText = new TextBlock
+            var row = CreateAccountGrid();
+            var accountNumber = new TextBlock { Text = $"{account.Number:00}", Classes = { "data", "cell" } };
+            var alias = new TextBlock
             {
-                Text = account.Points is { } points ? $"{points:N0}" : "—",
-                Classes = { "account-row" },
-                FontWeight = Avalonia.Media.FontWeight.SemiBold
+                Text = account.Label, Classes = { "cell" },
+                TextTrimming = TextTrimming.CharacterEllipsis
             };
-            var stateText = new TextBlock { Text = account.State, Classes = { "account-row" }, Foreground = account.IsHealthy ? HealthyBrush : MutedBrush, FontWeight = account.IsHealthy ? Avalonia.Media.FontWeight.SemiBold : Avalonia.Media.FontWeight.Normal };
-            Grid.SetColumn(aliasText, 1);
-            Grid.SetColumn(pointsText, 2);
-            Grid.SetColumn(stateText, 3);
-            row.Children.Add(numberText);
-            row.Children.Add(aliasText);
-            row.Children.Add(pointsText);
-            row.Children.Add(stateText);
-            DashboardAccountsPanel.Children.Add(new Border
-            {
-                Background = RowBackgroundBrush,
-                BorderBrush = RowBorderBrush,
-                BorderThickness = new Avalonia.Thickness(1),
-                CornerRadius = new Avalonia.CornerRadius(10),
-                Padding = new Avalonia.Thickness(14, 10),
-                Child = row
-            });
+            ToolTip.SetTip(alias, account.Label);
+            var points = new TextBlock { Text = account.Points?.ToString("N0") ?? "—", Classes = { "data", "cell" } };
+            var state = new TextBlock { Text = account.State, Classes = { "cell", "state" } };
+            state.Classes.Set("healthy", account.IsHealthy);
+            Grid.SetColumn(alias, 1);
+            Grid.SetColumn(points, 2);
+            Grid.SetColumn(state, 3);
+            row.Children.Add(accountNumber);
+            row.Children.Add(alias);
+            row.Children.Add(points);
+            row.Children.Add(state);
+            DashboardAccountsPanel.Children.Add(new Border { Classes = { "row" }, Child = row });
         }
     }
 
+    private static Grid CreateAccountGrid() => new()
+    {
+        ColumnDefinitions = new ColumnDefinitions("56,5*,3*,6*"),
+        ColumnSpacing = 10
+    };
+
     private static Grid BuildAccountHeader()
     {
-        var row = new Grid { ColumnDefinitions = new ColumnDefinitions("76,150,88,*"), Margin = new Avalonia.Thickness(14, 0, 14, 2) };
-        var numberText = new TextBlock { Text = "帳號", Classes = { "eyebrow" } };
-        var aliasText = new TextBlock { Text = "別名", Classes = { "eyebrow" } };
-        var pointsText = new TextBlock { Text = "點數", Classes = { "eyebrow" } };
-        var stateText = new TextBlock { Text = "狀態", Classes = { "eyebrow" } };
-        Grid.SetColumn(aliasText, 1);
-        Grid.SetColumn(pointsText, 2);
-        Grid.SetColumn(stateText, 3);
-        row.Children.Add(numberText);
-        row.Children.Add(aliasText);
-        row.Children.Add(pointsText);
-        row.Children.Add(stateText);
+        var row = CreateAccountGrid();
+        string[] headings = ["帳號", "別名", "點數", "狀態"];
+        for (var column = 0; column < headings.Length; column++)
+        {
+            var label = new TextBlock { Text = headings[column], Classes = { "caption" } };
+            Grid.SetColumn(label, column);
+            row.Children.Add(label);
+        }
         return row;
     }
 
@@ -155,10 +149,10 @@ public partial class MainWindow : Window
 
     private void RefreshBrowserHint()
     {
-        var label = BrowserLabel(_browser);
-        BrowserHintText.Text = $"目前選擇：{label}。建議 GitHub Actions 的 LITMEDIA_BROWSER 與此一致。";
+        var label = BrowserShortLabel(_browser);
+        BrowserHintText.Text = $"GitHub Actions 的 LITMEDIA_BROWSER 請設為 {_browser}。";
         LoginFlowHintText.Text =
-            $"程式會以 {label} 開啟 Playwright 登入流程。請自行完成密碼、OTP、CAPTCHA 或任何帳號驗證，並在終端機按 Enter 儲存登入狀態。";
+            $"程式會開啟 {label}。請在瀏覽器完成登入與所需的 OTP 或 CAPTCHA 驗證，再回到終端機按 Enter 儲存登入狀態。";
     }
 
     private async void RunLoginButton_OnClick(object? sender, RoutedEventArgs e)
@@ -495,18 +489,25 @@ public partial class MainWindow : Window
     {
         for (var number = 1; number <= AccountCount; number++)
         {
-            var input = new TextBox { Width = 340, Text = _aliases.GetValueOrDefault(number), Watermark = "例如：工作帳號" };
-            _aliasInputs[number] = input;
-            var row = new StackPanel { Orientation = Avalonia.Layout.Orientation.Horizontal, Spacing = 12 };
-            row.Children.Add(new TextBlock
+            var label = new TextBlock
             {
-                Text = $"帳號 {number:00}",
-                Width = 74,
-                FontSize = 13.5,
-                FontWeight = Avalonia.Media.FontWeight.SemiBold,
-                Foreground = Avalonia.Media.Brush.Parse("#334155"),
-                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
-            });
+                Text = $"帳號 {number:00}", Classes = { "cell" }
+            };
+            var input = new TextBox
+            {
+                Text = _aliases.GetValueOrDefault(number), Watermark = "例如：工作帳號",
+                HorizontalAlignment = HorizontalAlignment.Stretch
+            };
+            AutomationProperties.SetName(input, $"帳號 {number:00} 別名");
+            _aliasInputs[number] = input;
+            var row = new Grid
+            {
+                ColumnDefinitions = new ColumnDefinitions("76,*"), ColumnSpacing = 12,
+                MaxWidth = 680, HorizontalAlignment = HorizontalAlignment.Stretch,
+                Margin = new Thickness(0, 0, 12, 0)
+            };
+            Grid.SetColumn(input, 1);
+            row.Children.Add(label);
             row.Children.Add(input);
             AliasListPanel.Children.Add(row);
         }
@@ -641,13 +642,6 @@ public partial class MainWindow : Window
         "firefox" or "ff" => "firefox",
         "edge" or "msedge" or "microsoft-edge" or "microsoftedge" => "edge",
         _ => "chromium"
-    };
-
-    private static string BrowserLabel(string browser) => browser switch
-    {
-        "firefox" => "Firefox（備案）",
-        "edge" => "Edge（備案）",
-        _ => "Chromium（預設）"
     };
 
     private static string BrowserShortLabel(string browser) => browser switch

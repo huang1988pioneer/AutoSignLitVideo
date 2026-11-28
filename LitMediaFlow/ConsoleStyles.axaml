@@ -1,0 +1,154 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <Style Selector="TextBlock">
+    <Setter Property="Foreground" Value="{StaticResource InkBrush}"/>
+  </Style>
+  <Style Selector="TextBlock.title">
+    <Setter Property="FontSize" Value="32"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+  </Style>
+  <Style Selector="TextBlock.heading">
+    <Setter Property="FontSize" Value="19"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+  </Style>
+  <Style Selector="TextBlock.caption, TextBlock.detail">
+    <Setter Property="Foreground" Value="{StaticResource MutedBrush}"/>
+    <Setter Property="FontSize" Value="13"/>
+    <Setter Property="TextWrapping" Value="Wrap"/>
+  </Style>
+  <Style Selector="TextBlock.data">
+    <Setter Property="FontFamily" Value="{StaticResource DataFont}"/>
+  </Style>
+  <Style Selector="TextBlock.value">
+    <Setter Property="FontSize" Value="26"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+    <Setter Property="TextWrapping" Value="Wrap"/>
+  </Style>
+  <Style Selector="Border.sheet">
+    <Setter Property="Background" Value="{StaticResource SurfaceBrush}"/>
+    <Setter Property="BorderBrush" Value="{StaticResource LineBrush}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="CornerRadius" Value="10"/>
+    <Setter Property="Padding" Value="20"/>
+  </Style>
+  <Style Selector="Border.row">
+    <Setter Property="BorderBrush" Value="{StaticResource LineBrush}"/>
+    <Setter Property="BorderThickness" Value="0,0,0,1"/>
+    <Setter Property="Padding" Value="14,9"/>
+  </Style>
+  <Style Selector="Border.table-head">
+    <Setter Property="Background" Value="{StaticResource CanvasBrush}"/>
+  </Style>
+  <Style Selector="TextBlock.cell">
+    <Setter Property="FontSize" Value="13"/>
+    <Setter Property="VerticalAlignment" Value="Center"/>
+  </Style>
+  <Style Selector="TextBlock.state">
+    <Setter Property="Foreground" Value="{StaticResource MutedBrush}"/>
+    <Setter Property="TextWrapping" Value="Wrap"/>
+  </Style>
+  <Style Selector="TextBlock.healthy">
+    <Setter Property="Foreground" Value="{StaticResource SuccessBrush}"/>
+  </Style>
+  <Style Selector="Button">
+    <Setter Property="MinHeight" Value="40"/>
+    <Setter Property="FocusAdorner" Value="{x:Null}"/>
+    <Setter Property="Padding" Value="14,8"/>
+    <Setter Property="CornerRadius" Value="7"/>
+    <Setter Property="Cursor" Value="Hand"/>
+    <Setter Property="Foreground" Value="{StaticResource InkBrush}"/>
+    <Setter Property="Background" Value="{StaticResource SurfaceBrush}"/>
+    <Setter Property="BorderBrush" Value="{StaticResource LineBrush}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+  </Style>
+  <Style Selector="Button PathIcon">
+    <Setter Property="Foreground" Value="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ContentPresenter}}"/>
+  </Style>
+  <Style Selector="Button TextBlock">
+    <Setter Property="Foreground" Value="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ContentPresenter}}"/>
+  </Style>
+  <Style Selector="PathIcon">
+    <Setter Property="Width" Value="17"/>
+    <Setter Property="Height" Value="17"/>
+  </Style>
+  <Style Selector="Button.nav">
+    <Setter Property="MinHeight" Value="44"/>
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="BorderBrush" Value="Transparent"/>
+    <Setter Property="HorizontalAlignment" Value="Stretch"/>
+    <Setter Property="HorizontalContentAlignment" Value="Left"/>
+    <Setter Property="Padding" Value="12,8"/>
+    <Setter Property="Foreground" Value="{StaticResource MutedBrush}"/>
+  </Style>
+  <Style Selector="Button.nav-active"><Setter Property="FontWeight" Value="SemiBold"/></Style>
+  <Style Selector="Button.nav-active /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{StaticResource TintBrush}"/>
+    <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
+  </Style>
+  <Style Selector="Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{StaticResource HoverBrush}"/>
+    <Setter Property="Foreground" Value="{StaticResource InkBrush}"/>
+  </Style>
+  <Style Selector="Button:pressed /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{StaticResource LineBrush}"/>
+  </Style>
+  <Style Selector="Button.primary">
+    <Setter Property="Background" Value="{StaticResource AccentBrush}"/>
+    <Setter Property="Foreground" Value="{StaticResource SurfaceBrush}"/>
+    <Setter Property="BorderBrush" Value="Transparent"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+  </Style>
+  <Style Selector="Button.primary:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{StaticResource AccentHoverBrush}"/>
+    <Setter Property="Foreground" Value="{StaticResource SurfaceBrush}"/>
+  </Style>
+  <Style Selector="Button.primary:pressed /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{StaticResource AccentPressedBrush}"/>
+    <Setter Property="Foreground" Value="{StaticResource SurfaceBrush}"/>
+  </Style>
+  <Style Selector="Button:disabled /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{StaticResource HoverBrush}"/>
+    <Setter Property="Foreground" Value="{StaticResource MutedBrush}"/>
+    <Setter Property="BorderBrush" Value="{StaticResource LineBrush}"/>
+  </Style>
+  <Style Selector="Button:focus-visible /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="BorderBrush" Value="{StaticResource AccentPressedBrush}"/>
+    <Setter Property="BorderThickness" Value="2"/>
+  </Style>
+  <Style Selector="Button.primary:focus-visible /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="BorderBrush" Value="{StaticResource InkBrush}"/>
+  </Style>
+  <Style Selector="TextBox, ComboBox">
+    <Setter Property="MinHeight" Value="40"/>
+    <Setter Property="CornerRadius" Value="6"/>
+    <Setter Property="Background" Value="{StaticResource SurfaceBrush}"/>
+    <Setter Property="BorderBrush" Value="{StaticResource LineBrush}"/>
+  </Style>
+  <Style Selector="TextBlock.time-label">
+    <Setter Property="FontFamily" Value="{StaticResource DataFont}"/>
+    <Setter Property="FontWeight" Value="Bold"/>
+    <Setter Property="Foreground" Value="{StaticResource AccentPressedBrush}"/>
+    <Setter Property="FontSize" Value="18"/>
+  </Style>
+
+  <Style Selector="Border#Rail"><Setter Property="Width" Value="208"/></Style>
+  <Style Selector="StackPanel#Pages"><Setter Property="Margin" Value="28,22"/></Style>
+  <Style Selector="Viewbox#SchedulePlot"><Setter Property="Grid.Column" Value="1"/></Style>
+  <Style Selector="UniformGrid#Metrics"><Setter Property="Columns" Value="4"/></Style>
+
+  <ContainerQuery Name="shell" Query="max-width:980">
+    <Style Selector="Border#Rail"><Setter Property="Width" Value="72"/></Style>
+    <Style Selector="Button.nav"><Setter Property="HorizontalContentAlignment" Value="Center"/></Style>
+    <Style Selector="StackPanel.expanded, TextBlock.expanded"><Setter Property="IsVisible" Value="False"/></Style>
+    <Style Selector="StackPanel#Pages"><Setter Property="Margin" Value="18,18"/></Style>
+  </ContainerQuery>
+  <ContainerQuery Name="shell" Query="max-width:740">
+    <Style Selector="StackPanel#ScheduleActions, Viewbox#SchedulePlot"><Setter Property="Grid.ColumnSpan" Value="2"/></Style>
+    <Style Selector="Viewbox#SchedulePlot">
+      <Setter Property="Grid.Column" Value="0"/>
+      <Setter Property="Grid.Row" Value="1"/>
+      <Setter Property="Margin" Value="0,12,0,0"/>
+    </Style>
+    <Style Selector="UniformGrid#Metrics"><Setter Property="Columns" Value="2"/></Style>
+  </ContainerQuery>
+</Styles>
